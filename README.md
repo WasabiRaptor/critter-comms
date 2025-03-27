@@ -11,7 +11,7 @@ With this script, your messages can be critter-ified into whatever noises you wa
 
 This is not encryption, an encryption based system would be far too large and make messages way too long to be reasonable to see in chat.
 
-Instead, this system randomly generates critter words of similar length to the original words out of a configurable list of noises, using the lowercase original word as a seed so the same critter word is generated for the same word every time. Words can also be configured to always be replaced with a specific value as well. Only letters and numbers count as words, symbols are mostly ignored and left as is aside from a few cases where
+Instead, this system randomly generates critter words of similar length to the original words out of a configurable list of noises, using the lowercase original word as a seed so the same critter word is generated for the same word every time. Words can also be configured to always be replaced with a specific value as well. Only letters and numbers count as words, symbols are mostly ignored and left as is aside from a few cases where they are part of words, such as in emotes or contractions.
 
 The message is then sent in chat, there is likely no reasonable way to reverse engineer the original words due to how lossy this is, but not to fear! The script sends a figura script ping containing the data of the original message to the script on other clients, which is then stored as an avatar variable other scripts can retrieve.
 
