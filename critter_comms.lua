@@ -109,13 +109,13 @@ local function findNextWord(msg, pos)
   if whitespace then
     pos = whitespace + 1
   end
-  local lower = msg:lower()
   for _, v in ipairs(critter_comms_config.findContainers) do
     local foundContainer_1, foundContainer_2 = msg:find(v, pos)
     if foundContainer_1 and foundContainer_2 then
       return findNextWord(msg, foundContainer_2 + 1)
     end
   end
+  local lower = msg:lower()
   for _, v in ipairs(critter_comms_config.findWords) do
     local foundWord_1, foundWord_2 = lower:find(v, pos)
     if foundWord_1 and foundWord_2 then
@@ -123,8 +123,8 @@ local function findNextWord(msg, pos)
     end
   end
 
-  local foundLetter_1, foundLetter_2 = msg:find("%a+", pos) -- find letters
-  local foundDigit_1, foundDigit_2 = msg:find("%d+", pos)   -- find digits
+  local foundLetter_1, foundLetter_2 = lower:find("%a+", pos) -- find letters
+  local foundDigit_1, foundDigit_2 = lower:find("%d+", pos)   -- find digits
 
   if foundLetter_1 and foundDigit_1 then
     if foundLetter_1 < foundDigit_1 then

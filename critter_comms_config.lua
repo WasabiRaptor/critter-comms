@@ -112,10 +112,11 @@ critter_comms_config.notifications = {
 
 -- match string to check if a word is allowed to stay the same, this looks like a whitelist but the way things are handled this is technically a blacklist
 -- you can learn about the lua patten matching strings here https://www.lua.org/pil/20.2.html
--- a simple explaination of what this is, thia is the patten that matches for words critters aren't allowed to say
+-- a simple explaination of what this is, this is the patten that matches for words critters aren't allowed to say
 -- the brackets make a charset, and inside a charset, the ^ gets the complement of the character which is essentially everything that isn't said character
 -- so if we only put characters we want, and then put an ^ in front of them, we're actually making a set of every character that isn't these ones to match against
 -- if a word contains any character we don't want, it gets scrambled into critter speak
+-- the string being matched against is in lowercase
 critter_comms_config.speechBlacklist = "[^y^i^p^r^a^w^g]"
 
 
