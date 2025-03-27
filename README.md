@@ -7,6 +7,8 @@ fox to fox conversation
 ## About
 A drop-in figura script for critter-ifying your messages!
 
+This does require you to go into the figura settings and enable chat commands to function!
+
 With this script, your messages can be critter-ified into whatever noises you want, and only you, and other players with the script will be able to understand them!
 
 This is not encryption, an encryption based system would be far too large and make messages way too long to be reasonable to see in chat.
