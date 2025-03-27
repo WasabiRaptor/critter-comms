@@ -65,7 +65,7 @@ local function addNoise(curWord, newWord, noiseTable)
   local start, middle, ending = table.unpack(noiseTable[math.random(#noiseTable)])
   local noise = start .. middle .. ending
 
-  local from, to = curWord:find(curWord:sub((#newWord + 1), #newWord + 1) .. "+", #newWord + 1) -- check if the same character has been repeated
+  local from, to = curWord:find(curWord:sub((#newWord + #noise + 1), #newWord + #noise + 1) .. "+", #newWord + #noise + 2) -- check if the same character has been repeated
   if not to then
     if ((#newWord + #noise + critter_comms_config.stretchLastNoise) >= #curWord) then
       to = #curWord
