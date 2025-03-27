@@ -382,14 +382,14 @@ function events.chat_send_message(message)
       end
       pos = wordEnd + 1
       local curWord = message:sub(wordStart, wordEnd)
-
-      math.randomseed(hashString(curWord:lower())) -- set the seed to the hash of the word so any randomness with that word is consistent
+      local curWordLower = curWord:lower()
+      math.randomseed(hashString(curWordLower)) -- set the seed to the hash of the word so any randomness with that word is consistent
 
       if critter_comms_config.shortcutWords[curWord] then
         newMessage:append(critter_comms_config.shortcutWords[curWord], true)
-      elseif critter_comms_config.speakWhitelist[curWord:lower()] then
+      elseif critter_comms_config.speakWhitelist[curWordLower] then
         newMessage:append(curWord, true)
-      elseif not (curWord:find(critter_comms_config.speechBlacklist) or critter_comms_config.caseSensitiveSpecialWords[curWord] or critter_comms_config.specialWords[curWord:lower()]) then -- doesn't have any blacklisted characters and isn't a special word, copy as is and don't do any rolls
+      elseif not (curWordLower:find(critter_comms_config.speechBlacklist) or critter_comms_config.caseSensitiveSpecialWords[curWord] or critter_comms_config.specialWords[curWordLower]) then -- doesn't have any blacklisted characters and isn't a special word, copy as is and don't do any rolls
         newMessage:append(curWord, true)
       elseif (math.random(critter_comms_config.minimumSpeechLevel, critter_comms_config.normalSpeechLevel) <= level) and not (critter_comms_config.speak or intentional) then
         newMessage:append(curWord)
@@ -398,8 +398,8 @@ function events.chat_send_message(message)
         if critter_comms_config.caseSensitiveSpecialWords[curWord] then
           local newWord = critter_comms_config.caseSensitiveSpecialWords[curWord]
           newMessage:append(curWord, newWord)
-        elseif critter_comms_config.specialWords[curWord:lower()] then
-          local newWord = critter_comms_config.specialWords[curWord:lower()]
+        elseif critter_comms_config.specialWords[curWordLower] then
+          local newWord = critter_comms_config.specialWords[curWordLower]
           local _, uppercaseCount = curWord:gsub("%u", "")
           if uppercaseCount > (#curWord * critter_comms_config.allcapsPercentage) then
             newWord = newWord:upper()
