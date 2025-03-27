@@ -64,8 +64,12 @@ end
 local function addNoise(curWord, newWord, noiseTable)
   local start, middle, ending = table.unpack(noiseTable[math.random(#noiseTable)])
   local noise = start .. middle .. ending
+  while noise:sub(1, 1) == newWord:sub(-1, -1) do
+    start, middle, ending = table.unpack(noiseTable[math.random(#noiseTable)])
+    noise = start .. middle .. ending
+  end
 
-  local from, to = curWord:find(curWord:sub((#newWord + #noise + 1), #newWord + #noise + 1) .. "+", #newWord + #noise + 2) -- check if the same character has been repeated
+  local from, to = curWord:find("^"..curWord:sub((#newWord + #noise + 1), #newWord + #noise + 1) .. "+", #newWord + #noise + 2) -- check if the same character has been repeated
   if not to then
     if ((#newWord + #noise + critter_comms_config.stretchLastNoise) >= #curWord) then
       to = #curWord
@@ -423,6 +427,7 @@ function events.chat_send_message(message)
     end
     if not pos then break end
   end
+  host:appendChatHistory(message)
   newMessage:ping()
   return prepend .. newMessage:getString()
 end
