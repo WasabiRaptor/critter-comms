@@ -15,9 +15,9 @@ Instead, this system randomly generates critter words of similar length to the o
 
 The message is then sent in chat, there is likely no reasonable way to reverse engineer the original words due to how lossy this is, but not to fear! The script sends a figura script ping containing the data of the original message to the script on other clients, which is then stored as an avatar variable other scripts can retrieve.
 
-When recieving a message, the script will check avatar variables on the sender to determine if they are also a critter, if they are, it will temporarily obfuscate the message until it is able to retrieve the original message's data from that player's avatar variables, and then replace the obfuscated message with a 'translated' one, this is only for your client however! Other players who aren't critters will only ever see the critter-ified versions of the word!
+When recieving a message, the script will check avatar variables on the sender to determine if they are also a critter, if they are, it will temporarily obfuscate the message until it is able to retrieve the original message's data from that player's avatar variables, and then replace the obfuscated message with a 'translated' one, this is only for your client however! Other players who aren't critters will only ever see the critter-ified versions of the message!
 
-(Sometimes the retireval may fail and the message will remain obfuscated, this seems to be incredibly rare and only happens in moments of high lag)
+(Sometimes the retrieval may fail and the message will remain obfuscated, this seems to be incredibly rare and only happens in moments of high lag)
 
 Critters are also kind of dumb! Critters cannot understand most higher speech words that non-critters are using, so they become unreadable* unless its an important word, like "treat". *(unless you can read Illager runes or Standard Galactic Alphabet)
 However, as critters gain more experience, they start to understand more words, and might even be able to speak them!
