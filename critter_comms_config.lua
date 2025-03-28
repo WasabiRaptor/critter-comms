@@ -17,7 +17,7 @@
                         fox to fox conversation
 
                     Made by Wasabi_Raptor and Zygahedron
-
+                https://github.com/WasabiRaptor/critter-comms
 ]]
 
 local critter_comms_config = {}
