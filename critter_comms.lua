@@ -22,6 +22,21 @@
 
 -- print("reloaded")
 
+-- workaround to detectt if chat commands are enabled (thank you grandpa_scout)
+if host:isHost() then
+  CHAT_ENABLED = false
+  host:sendChatCommand("figura run CHAT_ENABLED = true")
+
+  if not CHAT_ENABLED then
+    printJson(toJson({
+      text = "Enable 'Chat Messages' in figura dev settings for Critter Comms to function.",
+      color = "#FF0000",
+    }))
+  end
+  -- Remove the evidence.
+  CHAT_ENABLED = nil
+end
+
 local critter_comms_config = require("critter_comms_config")
 
 avatar:store("isCritter", true)

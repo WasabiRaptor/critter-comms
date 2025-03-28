@@ -4,6 +4,10 @@ fox to fox communication
 
 fox to fox conversation
 
+## Disclaimer
+This might not fly under certain server rules about not sending encoded messages or only speaking english!
+So make sure to double check before using it.
+
 ## About
 A drop-in figura script for critter-ifying your messages!
 
