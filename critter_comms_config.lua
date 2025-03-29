@@ -35,7 +35,7 @@ critter_comms_config.selfWhispers = true
 -- these ones will enable or disable you having to talk in critter speak
 critter_comms_config.enableSpeak = {
   -- any match strings defined in the list will be accepted as a command
-  ["^%!foxspeak true"] = true,     -- true means the message will be hidden on recipt
+  ["^%!foxspeak true"] = true, -- true means the message will be hidden on recipt
   -- ["silly fox critter"] = false,   -- false means the message will not be hidden on recipt
   -- this second message doesn't have a ^ at the start, so if the phrase is found anywhere in a message, it will activate
 }
@@ -70,6 +70,39 @@ critter_comms_config.userList = {
   -- ["Speaker Block"] = true, -- supplementaries speaker blocks are supported,
   -- regardless of the name of the block they are treated as having the "Speaker Block" username here for the sake of people not using them to get around blacklists
 
+}
+
+-- what kinds of critter speak you speak in, you speak in all of these at once when you send a message,
+-- if the recipient understands any of these, your message will be translated for them
+-- I reccommend using simple adjectives or nouns here, things that describe your species
+critter_comms_config.speakKinds = {
+  "critter", -- I reccommend always speaking "critter" even if you aren't set to always understand it, as it is the default and should be universal
+  "fox",     -- you probably should speak the type that your species is
+
+  -- potentially, other more broad 'classes' your species falls under
+  "carnivore",
+  "omnivore",
+  "vulpine"
+}
+-- kinds of critter speak you understand,
+critter_comms_config.understandKinds = {
+  critter = true, -- I would generally keep this one if you want to understand anyone using the script, remove if you want more species specificity
+  fox = true,     -- you should of course, understand your own species
+
+  -- you should probably understand other species similar or close enough to your own
+  cat = true,
+  dog = true,
+  wolf = true,
+  coyote = true,
+
+  -- potentially, other more broad 'classes' your species falls under
+  carnivore = true,
+  omnivore = true,
+  vulpine = true
+
+  -- ther may be other more broad 'classes' examples
+  -- pokemon = true,
+  -- alien = true,
 }
 
 -- hex color for the notifications above the hotbar
@@ -270,6 +303,11 @@ critter_comms_config.understandWhitelist = {
   eat = true,
   feed = true,
   give = true,
+  drop = true,
+  hide = true,
+  hunt = true,
+  chase = true,
+  follow = true,
 
   ["in"] = true,
   out = true,
@@ -385,6 +423,10 @@ critter_comms_config.understandWhitelist = {
   wolves = true,
   wolfs = true,
   cub = true,
+  wolp = true,
+
+  coyote = true,
+  yote = true,
 
   rabbit = true,
   rabbits = true,
@@ -397,6 +439,10 @@ critter_comms_config.understandWhitelist = {
   birds = true,
   birdie = true,
   birdies = true,
+
+  squirrel = true,
+
+  bear = true,
 
   otter = true,
   oter = true,
