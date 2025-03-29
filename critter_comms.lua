@@ -476,7 +476,7 @@ local function processCommand(message, phrase, hide, target, enable, allow)
           local notif = critter_comms_config.notifications.wordsGained
           critter_comms_config[target] = enable -- doing it early here for easier calcs
           if (not (critter_comms_config.speak or critter_comms_config.brain)) and (level > critter_comms_config.normalSpeechLevel) then
-            notif = critter_comms_config.speechGained
+            notif = critter_comms_config.notifications.speechGained
           end
           hotBarNotification(notif)
         end
