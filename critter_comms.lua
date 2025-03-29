@@ -324,11 +324,13 @@ function pings.sent_chat_message(messageJson)
   messageNumber = messageNumber + 1
   local str = message:getString()
   avatar:store("msg:" .. str, message.message)
+  avatar:store("msgNum:" .. str, messageNumber)
   avatar:store("messageNumber", messageNumber)
   table.insert(backlog, str)
   local old = table.remove(backlog, 1)
-  if old ~= str then
+  if (old ~= str) and (old ~= backlog[#backlog-1]) and (old ~= backlog[#backlog-2]) and (old ~= backlog[#backlog-3]) and (old ~= backlog[#backlog-4]) then
     avatar:store("msg:" .. old)
+    avatar:store("msgNum:" .. old)
   end
 end
 
@@ -560,6 +562,7 @@ function events.chat_receive_message(raw, text)
         -- printTable(world:avatarVars(), 3)
         if isCritter then
           local critterMessage = variables["msg:" .. message]
+          local critterMessageNum = variables["msgNum:" .. message]
           local newMessageNumber = variables.messageNumber or 0
           local lastMessageNumber = userLastMessageNumber[username] or 0
           if newMessageNumber < lastMessageNumber then
@@ -574,7 +577,7 @@ function events.chat_receive_message(raw, text)
           end
 
           if critterMessage and (newMessageNumber > lastMessageNumber) then
-            userLastMessageNumber[username] = lastMessageNumber + 1
+            userLastMessageNumber[username] = critterMessageNum or (lastMessageNumber + 1)
             messageTable.with[2] = _Message:new(critterMessage):critterParse(true, canUnderstand)
             return toJson(messageTable)
           else
@@ -628,6 +631,8 @@ function events.tick()
     local username, uuid, message, canUnderstand, attempts = table.unpack(critterMessageQueue[1])
     local variables = world:avatarVars()[uuid] or {}
     local critterMessage = variables["msg:" .. message]
+    local critterMessageNum = variables["msgNum:" .. message]
+
     local newMessageNumber = variables.messageNumber or 0
     local lastMessageNumber = userLastMessageNumber[username] or 0
     if newMessageNumber < lastMessageNumber then
@@ -647,7 +652,7 @@ function events.tick()
           -- printTable(curMessage, 4)
           -- printTable(parseJson(host:getChatMessage(i).json), 3)
           if (curMessageText == message) and (curMessageUsername == username) then
-            userLastMessageNumber[username] = lastMessageNumber + 1
+            userLastMessageNumber[username] = critterMessageNum or (lastMessageNumber + 1)
 
             curMessageJson.extra[4] = _Message:new(critterMessage):critterParse(true, canUnderstand)
             host:setChatMessage(i, toJson(curMessageJson))
@@ -657,7 +662,7 @@ function events.tick()
         end
       end
     elseif attempts > 20 then
-      userLastMessageNumber[username] = lastMessageNumber + 1
+      userLastMessageNumber[username] = critterMessageNum or (lastMessageNumber + 1)
       table.remove(critterMessageQueue, 1)
     end
   end
