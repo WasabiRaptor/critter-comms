@@ -10,7 +10,7 @@
          /\  ___\   /\  __ \   /\ "-./  \   /\ "-./  \   /\  ___\
          \ \ \____  \ \ \/\ \  \ \ \-./\ \  \ \ \-./\ \  \ \___  \
           \ \_____\  \ \_____\  \ \_\ \ \_\  \ \_\ \ \_\  \/\_____\
-           \/_____/   \/_____/   \/_/  \/_/   \/_/  \/_/   \/_____/ v1.1
+           \/_____/   \/_____/   \/_/  \/_/   \/_/  \/_/   \/_____/ v1.1.1
 
                         fox to fox communication
 
@@ -572,7 +572,7 @@ function events.chat_receive_message(raw, text)
 
           local canUnderstand = true
           for _, v in ipairs(variables.speakKinds or {}) do
-            canUnderstand = (variables.understandKinds or {})[v]
+            canUnderstand = (variables.understandKinds or {})[v] or false
             if canUnderstand then break end
           end
 
@@ -582,7 +582,7 @@ function events.chat_receive_message(raw, text)
             return toJson(messageTable)
           else
             messageTable.with[2] = { text = message, obfuscated = true, font = "alt" } -- temporarily obfuscate until we can parse it with the critter message data
-            table.insert(critterMessageQueue, { username, uuid, message, canUnderstand, 0 })
+            table.insert(critterMessageQueue, { username or "", uuid or "", message or "", canUnderstand or false, 0 })
             return toJson(messageTable)
           end
         end
