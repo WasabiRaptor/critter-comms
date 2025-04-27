@@ -104,9 +104,11 @@ local function addNoise(curWord, newWord, noiseTable)
     start, middle, ending = start:upper(), middle:upper(), ending:upper()
   end
   newWord = newWord .. start
-  newWord = newWord .. middle
-  while #newWord < (to - #ending) do
     newWord = newWord .. middle
+  if #middle > 0 then
+    while #newWord < (to - #ending) do
+      newWord = newWord .. middle
+    end
   end
   newWord = newWord .. ending
 
