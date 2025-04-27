@@ -572,7 +572,7 @@ function events.chat_receive_message(raw, text)
 
           local canUnderstand = true
           for _, v in ipairs(variables.speakKinds or {}) do
-            canUnderstand = (variables.understandKinds or {})[v] or false
+            canUnderstand = (critter_comms_config.understandKinds or {})[v] or false
             if canUnderstand then break end
           end
 
