@@ -10,7 +10,7 @@
          /\  ___\   /\  __ \   /\ "-./  \   /\ "-./  \   /\  ___\
          \ \ \____  \ \ \/\ \  \ \ \-./\ \  \ \ \-./\ \  \ \___  \
           \ \_____\  \ \_____\  \ \_\ \ \_\  \ \_\ \ \_\  \/\_____\
-           \/_____/   \/_____/   \/_/  \/_/   \/_/  \/_/   \/_____/ v1.1.1
+           \/_____/   \/_____/   \/_/  \/_/   \/_/  \/_/   \/_____/ v1.1.2
 
                         fox to fox communication
 
@@ -38,6 +38,8 @@ if host:isHost() then
 end
 
 local critter_comms_config = require("critter_comms_config")
+local debug = config:load("debug") or false
+if debug then print("Critter Comms debug messages are enabled.") end
 
 avatar:store("isCritter", true)
 avatar:store("speakKinds", critter_comms_config.speakKinds or { "critter" })
@@ -199,8 +201,7 @@ function _Message:critterParse(isCritter, canUnderstand)
   local level = player:getExperienceLevel()
   local out = {}
   if isCritter then
-    local wordsUnderstood = 0
-
+    local wordsTranslated = 0
     for i, v in ipairs(self.message) do
       local word, newWord = table.unpack(v)
       math.randomseed(hashString(word:lower()))                                                                                                           -- set the seed to the hash of the word so any randomness with that word is consistent
@@ -215,8 +216,8 @@ function _Message:critterParse(isCritter, canUnderstand)
           obfuscated = false,
           font = "default",
         })
-        if type(newWord) ~= "boolean" then
-          wordsUnderstood = wordsUnderstood + 1
+        if type(newWord) == "string" then
+          wordsTranslated = wordsTranslated + 1
         end
       else -- not a word we can understand, obfuscate in some way
         local obfuscate = critter_comms_config.obfuscateMethod
@@ -247,7 +248,7 @@ function _Message:critterParse(isCritter, canUnderstand)
         end
       end
     end
-    if (not canUnderstand) or (wordsUnderstood < 1) then return out end
+    if (not canUnderstand) or (wordsTranslated < 1) then return out end
     table.insert(out, {
       text = "\n -> ",
       color = "gray",
@@ -393,6 +394,11 @@ function events.chat_send_message(message)
     else
       return message
     end
+  elseif message == "!debug" then
+    debug = not debug
+    config:save("debug", debug)
+    print(debug and "Critter Comms debug messages enabled." or "Critter Comms debug messages disabled.")
+    return
   end
 
   local intentional, f2 = message:find(critter_comms_config.critterSpeakCommand, pos)
@@ -450,6 +456,7 @@ function events.chat_send_message(message)
     end
     if not pos then break end
   end
+  if debug then print("original message: ", message) end
   host:appendChatHistory(message)
   newMessage:ping()
   return prepend .. newMessage:getString()
@@ -468,6 +475,7 @@ local userLastMessageNumber = {
 local function processCommand(message, phrase, hide, target, enable, allow)
   local level = player:getExperienceLevel()
   if message:find(phrase) then
+    if debug then print("found command: ", phrase, "\n allow: ", allow) end
     if allow then
       if enable then
         if (not (critter_comms_config.speak and critter_comms_config.brain)) and (level > critter_comms_config.minimumSpeechLevel) and not critter_comms_config[target] then
@@ -496,7 +504,10 @@ function events.chat_receive_message(raw, text)
   if not player:isLoaded() then return end
   if raw:find("^%[lua%]") then return end
   local messageTable = parseJson(text)
-  -- printTable(messageTable, 3)
+  if debug then
+    print("received message.")
+    printTable(messageTable, 3)
+  end
 
   local username = ((messageTable.with or {})[1] or {}).insertion
   local uuid = ((((messageTable.with or {})[1] or {}).hoverEvent or {}).contents or {}).id
@@ -555,40 +566,48 @@ function events.chat_receive_message(raw, text)
         if processCommand(message, phrase, hide, "brain", false, allowCommand) then return false end
       end
     end
-    local level = player:getExperienceLevel()
-    if (critter_comms_config.brain or (level < critter_comms_config.normalSpeechLevel)) and not (incoming and (player:getName() == username)) then
-      if uuid then
-        local variables = world:avatarVars()[uuid] or {}
-        local isCritter = variables.isCritter
-        -- print(isCritter, username, uuid)
-        -- printTable(world:avatarVars(), 3)
-        if isCritter then
-          local critterMessage = variables["msg:" .. message]
-          local critterMessageNum = variables["msgNum:" .. message]
-          local newMessageNumber = variables.messageNumber or 0
-          local lastMessageNumber = userLastMessageNumber[username] or 0
-          if newMessageNumber < lastMessageNumber then
-            userLastMessageNumber[username] = 0
-            lastMessageNumber = 0
-          end
+    if (incoming and (player:getName() == username)) then return end
 
-          local canUnderstand = true
-          for _, v in ipairs(variables.speakKinds or {}) do
-            canUnderstand = (critter_comms_config.understandKinds or {})[v] or false
-            if canUnderstand then break end
-          end
+    if uuid then
+      local variables = world:avatarVars()[uuid] or {}
+      local isCritter = variables.isCritter
+      if isCritter then
+        local critterMessage = variables["msg:" .. message]
+        local critterMessageNum = variables["msgNum:" .. message]
+        local newMessageNumber = variables.messageNumber or 0
+        local lastMessageNumber = userLastMessageNumber[username] or 0
+        if newMessageNumber < lastMessageNumber then
+          userLastMessageNumber[username] = 0
+          lastMessageNumber = 0
+        end
 
-          if critterMessage and (newMessageNumber > lastMessageNumber) then
-            userLastMessageNumber[username] = critterMessageNum or (lastMessageNumber + 1)
-            messageTable.with[2] = _Message:new(critterMessage):critterParse(true, canUnderstand)
-            return toJson(messageTable)
-          else
-            messageTable.with[2] = { text = message, obfuscated = true, font = "alt" } -- temporarily obfuscate until we can parse it with the critter message data
-            table.insert(critterMessageQueue, { username or "", uuid or "", message or "", canUnderstand or false, 0 })
-            return toJson(messageTable)
-          end
+        local canUnderstand = true
+        for _, v in ipairs(variables.speakKinds or {}) do
+          canUnderstand = (critter_comms_config.understandKinds or {})[v] or false
+          if canUnderstand then break end
+        end
+
+        if critterMessage and (newMessageNumber > lastMessageNumber) then
+          userLastMessageNumber[username] = critterMessageNum or (lastMessageNumber + 1)
+          messageTable.with[2] = _Message:new(critterMessage):critterParse(true, canUnderstand)
+          return toJson(messageTable)
+        else
+          if debug then print("obfuscating critter message, adding message to parsing queue.") end
+          messageTable.with[2] = { text = message, obfuscated = true, font = "alt" } -- temporarily obfuscate until we can parse it with the critter message data
+          table.insert(critterMessageQueue, {
+            username = username or "",
+            uuid = uuid or "",
+            message = message or "",
+            canUnderstand = canUnderstand or false,
+            attempts = 0
+          })
+          return toJson(messageTable)
         end
       end
+    end
+    local level = player:getExperienceLevel()
+    if (critter_comms_config.brain or (level < critter_comms_config.normalSpeechLevel)) then
+      if debug then print("Non critter message found, obfuscating words beyond speech level.") end
       local length = #message
       local newMessage = _Message:new()
       local pos = 1
@@ -618,6 +637,8 @@ function events.chat_receive_message(raw, text)
       end
       return toJson(messageTable)
     end
+  elseif debug then
+    print("invalid message to parse: ", username, uuid, valid)
   end
 end
 
@@ -629,42 +650,49 @@ function events.tick()
     didPostInit = true
     postInit()
   end
-  if critterMessageQueue[1] then
-    local username, uuid, message, canUnderstand, attempts = table.unpack(critterMessageQueue[1])
-    local variables = world:avatarVars()[uuid] or {}
-    local critterMessage = variables["msg:" .. message]
-    local critterMessageNum = variables["msgNum:" .. message]
+  local queued = critterMessageQueue[1]
+  if queued then
+    queued.attempts = queued.attempts + 1
+    local variables = world:avatarVars()[queued.uuid] or {}
+    local critterMessage = variables["msg:" .. queued.message]
+    local critterMessageNum = variables["msgNum:" .. queued.message]
 
     local newMessageNumber = variables.messageNumber or 0
-    local lastMessageNumber = userLastMessageNumber[username] or 0
+    local lastMessageNumber = userLastMessageNumber[queued.username] or 0
     if newMessageNumber < lastMessageNumber then
-      userLastMessageNumber[username] = 0
+      userLastMessageNumber[queued.username] = 0
       lastMessageNumber = 0
     end
-
-    critterMessageQueue[1][#critterMessageQueue[1]] = attempts + 1
+    if debug then print("finding queued message: ", queued.message, "\n attempt: ", queued.attempts) end
 
     if critterMessage and (newMessageNumber > lastMessageNumber) then
       for i = 1, 10 do
         local curMessage = host:getChatMessage(i)
         if curMessage then
           local curMessageJson = parseJson(curMessage.json)
+          if debug then
+            print("checking message history: ", i)
+            printTable(curMessageJson, 3)
+          end
+
           local curMessageText = condenseText(curMessageJson.extra[4])
           local curMessageUsername = curMessageJson.extra[2].insertion
-          -- printTable(curMessage, 4)
-          -- printTable(parseJson(host:getChatMessage(i).json), 3)
-          if (curMessageText == message) and (curMessageUsername == username) then
-            userLastMessageNumber[username] = critterMessageNum or (lastMessageNumber + 1)
+          if (curMessageText == queued.message) and (curMessageUsername == queued.username) then
+            userLastMessageNumber[queued.username] = critterMessageNum or (lastMessageNumber + 1)
 
-            curMessageJson.extra[4] = _Message:new(critterMessage):critterParse(true, canUnderstand)
+            curMessageJson.extra[4] = _Message:new(critterMessage):critterParse(true, queued.canUnderstand)
             host:setChatMessage(i, toJson(curMessageJson))
             table.remove(critterMessageQueue, 1)
+            if debug then print("found message.") end
             break
           end
+        else
+          break
         end
       end
-    elseif attempts > 20 then
-      userLastMessageNumber[username] = critterMessageNum or (lastMessageNumber + 1)
+    elseif queued.attempts > 20 then
+      if debug then print("gave up on finding message after too many attempts.") end
+      userLastMessageNumber[queued.username] = critterMessageNum or (lastMessageNumber + 1)
       table.remove(critterMessageQueue, 1)
     end
   end

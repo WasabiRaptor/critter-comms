@@ -36,7 +36,7 @@ critter_comms_config.selfWhispers = true
 critter_comms_config.enableSpeak = {
   -- any match strings defined in the list will be accepted as a command
   ["^%!foxspeak true"] = true, -- true means the message will be hidden on recipt
-  -- ["silly fox critter"] = false,   -- false means the message will not be hidden on recipt
+  -- ["silly fox critter"] = false,   -- false means the message will not be hidden on receipt
   -- this second message doesn't have a ^ at the start, so if the phrase is found anywhere in a message, it will activate
 }
 critter_comms_config.disableSpeak = {
