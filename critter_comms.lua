@@ -674,9 +674,8 @@ function events.tick()
             print("checking message history: ", i)
             printTable(curMessageJson, 3)
           end
-
-          local curMessageText = condenseText(curMessageJson.extra[4])
-          local curMessageUsername = curMessageJson.extra[2].insertion
+          local curMessageText = condenseText(((curMessageJson or {}).extra or {})[4])
+          local curMessageUsername = (((curMessageJson or {}).extra or {})[2] or {}).insertion
           if (curMessageText == queued.message) and (curMessageUsername == queued.username) then
             userLastMessageNumber[queued.username] = critterMessageNum or (lastMessageNumber + 1)
 
