@@ -36,34 +36,35 @@ if host:isHost() then
   -- Remove the evidence.
   CHAT_ENABLED = nil
 end
-
-local critter_comms_config = require("critter_comms_config")
+local cc = {
+  config = require("critter_comms_config")
+}
 local debug = config:load("debug") or false
 if debug then print("Critter Comms debug messages are enabled.") end
 
 avatar:store("isCritter", true)
-avatar:store("speakKinds", critter_comms_config.speakKinds or { "critter" })
+avatar:store("speakKinds", cc.config.speakKinds or { "critter" })
 local messageNumber = 0
 avatar:store("messageNumber", messageNumber)
-if critter_comms_config.persist and ((config:load("critterSpeak") or config:load("critterBrain")) ~= nil) then
-  critter_comms_config.speak = config:load("critterSpeak")
-  critter_comms_config.brain = config:load("critterBrain")
+if cc.config.persist and ((config:load("critterSpeak") or config:load("critterBrain")) ~= nil) then
+  cc.config.speak = config:load("critterSpeak")
+  cc.config.brain = config:load("critterBrain")
 end
 
 ---@param str string
 ---@return integer
-local function hashString(str)
+function cc.hashString(str)
   local hash = 5381
   for i = 1, #str do
     hash = math.fmod(hash * 33 + str:byte(i), 2147483648)
   end
   return hash
 end
-local function condenseText(textTable)
+function cc.condenseText(textTable)
   if type(textTable) == "table" and textTable[1] then
     local out = ""
     for _, v in ipairs(textTable) do
-      out = out .. (condenseText(v) or "")
+      out = out .. (cc.condenseText(v) or "")
     end
     return out
   elseif type(textTable) == "table" and textTable.text then
@@ -79,7 +80,7 @@ end
 ---@param newWord string
 ---@param noiseTable table
 ---@return string
-local function addNoise(curWord, newWord, noiseTable)
+function cc.addNoise(curWord, newWord, noiseTable)
   local start, middle, ending = table.unpack(noiseTable[math.random(#noiseTable)])
   local noise = start .. middle .. ending
   local noisecount = 1
@@ -92,17 +93,17 @@ local function addNoise(curWord, newWord, noiseTable)
   local from, to = curWord:find("^" .. curWord:sub((#newWord + #noise + 1), #newWord + #noise + 1) .. "+",
     #newWord + #noise + 2) -- check if the same character has been repeated
   if not to then
-    if ((#newWord + #noise + critter_comms_config.stretchLastNoise) >= #curWord) then
+    if ((#newWord + #noise + cc.config.stretchLastNoise) >= #curWord) then
       to = #curWord
-    elseif ((#newWord + #noise + critter_comms_config.randomStretchRange[2]) <= #curWord) then
-      to = #newWord + #noise + math.random(table.unpack(critter_comms_config.randomStretchRange))
+    elseif ((#newWord + #noise + cc.config.randomStretchRange[2]) <= #curWord) then
+      to = #newWord + #noise + math.random(table.unpack(cc.config.randomStretchRange))
     end
   end
   local substituting = curWord:sub(#newWord, to)
 
   local _, uppercaseCount = substituting:gsub("%u", "")
   local _, letterCount = substituting:gsub("%a", "")
-  if uppercaseCount > (letterCount * critter_comms_config.allcapsPercentage) then
+  if uppercaseCount > (letterCount * cc.config.allcapsPercentage) then
     start, middle, ending = start:upper(), middle:upper(), ending:upper()
   end
   newWord = newWord .. start
@@ -117,33 +118,33 @@ local function addNoise(curWord, newWord, noiseTable)
   return newWord
 end
 
-local function hotBarNotification(notif)
+function cc.hotBarNotification(notif)
   host:setActionbar(toJson({
-    { text = notif[math.random(#notif)], color = critter_comms_config.notificationColor },
+    { text = notif[math.random(#notif)], color = cc.config.notificationColor },
   }), true)
 end
 
-local function correctCapitalization(curWord, newWord)
+function cc.correctCapitalization(curWord, newWord)
   if curWord:sub(1, 1):find("^%u") then
     newWord = newWord:sub(1, 1):upper() .. newWord:sub(2, -1)
   end
   return newWord
 end
 
-local function findNextWord(msg, pos)
+function cc.findNextWord(msg, pos)
   local wordStart, wordEnd
   local _, whitespace = msg:find("^%s+", pos)
   if whitespace then
     pos = whitespace + 1
   end
-  for _, v in ipairs(critter_comms_config.findContainers) do
+  for _, v in ipairs(cc.config.findContainers) do
     local foundContainer_1, foundContainer_2 = msg:find(v, pos)
     if foundContainer_1 and foundContainer_2 then
-      return findNextWord(msg, foundContainer_2 + 1)
+      return cc.findNextWord(msg, foundContainer_2 + 1)
     end
   end
   local lower = msg:lower()
-  for _, v in ipairs(critter_comms_config.findWords) do
+  for _, v in ipairs(cc.config.findWords) do
     local foundWord_1, foundWord_2 = lower:find(v, pos)
     if foundWord_1 and foundWord_2 then
       return foundWord_1, foundWord_2
@@ -204,12 +205,12 @@ function _Message:critterParse(isCritter, canUnderstand)
     local wordsTranslated = 0
     for i, v in ipairs(self.message) do
       local word, newWord = table.unpack(v)
-      math.randomseed(hashString(word:lower()))                                                                                                           -- set the seed to the hash of the word so any randomness with that word is consistent
+      math.randomseed(cc.hashString(word:lower()))                                                                                                           -- set the seed to the hash of the word so any randomness with that word is consistent
       if newWord                                                                                                                                          -- critter word or something else critters can understand so use original word
-          or ((math.random(critter_comms_config.minimumSpeechLevel, critter_comms_config.normalSpeechLevel) <= level) and not critter_comms_config.brain) -- if not a critter word, check if we can understand it
-          or critter_comms_config.obfuscateMethod == "none"
-          or critter_comms_config.understandWhitelist[word:lower()]
-          or critter_comms_config.speakWhitelist[word:lower()]
+          or ((math.random(cc.config.minimumSpeechLevel, cc.config.normalSpeechLevel) <= level) and not cc.config.brain) -- if not a critter word, check if we can understand it
+          or cc.config.obfuscateMethod == "none"
+          or cc.config.understandWhitelist[word:lower()]
+          or cc.config.speakWhitelist[word:lower()]
       then
         table.insert(out, {
           text = ((type(newWord) == "string") and newWord or word),
@@ -220,7 +221,7 @@ function _Message:critterParse(isCritter, canUnderstand)
           wordsTranslated = wordsTranslated + 1
         end
       else -- not a word we can understand, obfuscate in some way
-        local obfuscate = critter_comms_config.obfuscateMethod
+        local obfuscate = cc.config.obfuscateMethod
         if obfuscate == "random" then
           obfuscate = ({ "galactic_alphabet", "illager_runes", "obfuscated" })
               [math.random(3)]
@@ -259,12 +260,12 @@ function _Message:critterParse(isCritter, canUnderstand)
 
   for i, v in ipairs(self.message) do
     local word, newWord = table.unpack(v)
-    math.randomseed(hashString(word:lower()))                                                                                                           -- set the seed to the hash of the word so any randomness with that word is consistent
+    math.randomseed(cc.hashString(word:lower()))                                                                                                           -- set the seed to the hash of the word so any randomness with that word is consistent
     if newWord                                                                                                                                          -- critter word or something else critters can understand so use original word
-        or ((math.random(critter_comms_config.minimumSpeechLevel, critter_comms_config.normalSpeechLevel) <= level) and not critter_comms_config.brain) -- if not a critter word, check if we can understand it
-        or critter_comms_config.obfuscateMethod == "none"
-        or critter_comms_config.understandWhitelist[word:lower()]
-        or critter_comms_config.speakWhitelist[word:lower()]
+        or ((math.random(cc.config.minimumSpeechLevel, cc.config.normalSpeechLevel) <= level) and not cc.config.brain) -- if not a critter word, check if we can understand it
+        or cc.config.obfuscateMethod == "none"
+        or cc.config.understandWhitelist[word:lower()]
+        or cc.config.speakWhitelist[word:lower()]
     then
       table.insert(out, {
         text = word,
@@ -273,7 +274,7 @@ function _Message:critterParse(isCritter, canUnderstand)
         color = isCritter and "gray",
       })
     else -- not a word we can understand, obfuscate in some way
-      local obfuscate = critter_comms_config.obfuscateMethod
+      local obfuscate = cc.config.obfuscateMethod
       if obfuscate == "random" then
         obfuscate = ({ "galactic_alphabet", "illager_runes", "obfuscated" })[math.random(3)]
       elseif obfuscate == "random_font" then
@@ -342,12 +343,12 @@ function events.entity_init()
   prevLevel = player:getExperienceLevel()
 end
 
-local function parseNameplate(input)
+function cc.parseNameplate(input)
   if input then
-    return condenseText(parseJson(input))
+    return cc.condenseText(parseJson(input))
   end
 end
-local function postInit()
+function cc.postInit()
   -- add all words in player's name to the understand whitelist so they can always know when people are talking about them
   -- for _, name in ipairs({
   -- 	player:getName(),
@@ -386,7 +387,7 @@ function events.chat_send_message(message)
       local ws1, ws2 = message:find("%s+", tell + 1)
       prepend = message:sub(1, ws2)
       pos = ws2 + 1
-      if message:sub(tell + 1, ws1 - 1) == player:getName() and critter_comms_config.selfWhispers then
+      if message:sub(tell + 1, ws1 - 1) == player:getName() and cc.config.selfWhispers then
         newMessage:append(message:sub(pos, -1), true)
         newMessage:ping()
         return message
@@ -401,13 +402,13 @@ function events.chat_send_message(message)
     return
   end
 
-  local intentional, f2 = message:find(critter_comms_config.critterSpeakCommand, pos)
+  local intentional, f2 = message:find(cc.config.critterSpeakCommand, pos)
   if intentional and f2 then
     pos = f2 + 1
   end
 
   while pos <= length do
-    local wordStart, wordEnd = findNextWord(message, pos)
+    local wordStart, wordEnd = cc.findNextWord(message, pos)
     if wordStart then
       if pos < wordStart then
         local misc = message:sub(pos, wordStart - 1)
@@ -416,37 +417,37 @@ function events.chat_send_message(message)
       pos = wordEnd + 1
       local curWord = message:sub(wordStart, wordEnd)
       local curWordLower = curWord:lower()
-      math.randomseed(hashString(curWordLower)) -- set the seed to the hash of the word so any randomness with that word is consistent
+      math.randomseed(cc.hashString(curWordLower)) -- set the seed to the hash of the word so any randomness with that word is consistent
 
-      if critter_comms_config.shortcutWords[curWord] then
-        newMessage:append(critter_comms_config.shortcutWords[curWord], true)
-      elseif critter_comms_config.speakWhitelist[curWordLower] then
+      if cc.config.shortcutWords[curWord] then
+        newMessage:append(cc.config.shortcutWords[curWord], true)
+      elseif cc.config.speakWhitelist[curWordLower] then
         newMessage:append(curWord, true)
-      elseif not (curWordLower:find(critter_comms_config.speechBlacklist) or critter_comms_config.caseSensitiveSpecialWords[curWord] or critter_comms_config.specialWords[curWordLower]) then -- doesn't have any blacklisted characters and isn't a special word, copy as is and don't do any rolls
+      elseif not (curWordLower:find(cc.config.speechBlacklist) or cc.config.caseSensitiveSpecialWords[curWord] or cc.config.specialWords[curWordLower]) then -- doesn't have any blacklisted characters and isn't a special word, copy as is and don't do any rolls
         newMessage:append(curWord, true)
-      elseif (math.random(critter_comms_config.minimumSpeechLevel, critter_comms_config.normalSpeechLevel) <= level) and not (critter_comms_config.speak or intentional) then
+      elseif (math.random(cc.config.minimumSpeechLevel, cc.config.normalSpeechLevel) <= level) and not (cc.config.speak or intentional) then
         newMessage:append(curWord)
       else
         wordsReplaced = wordsReplaced + 1
-        if critter_comms_config.caseSensitiveSpecialWords[curWord] then
-          local newWord = critter_comms_config.caseSensitiveSpecialWords[curWord]
+        if cc.config.caseSensitiveSpecialWords[curWord] then
+          local newWord = cc.config.caseSensitiveSpecialWords[curWord]
           newMessage:append(curWord, newWord)
-        elseif critter_comms_config.specialWords[curWordLower] then
-          local newWord = critter_comms_config.specialWords[curWordLower]
+        elseif cc.config.specialWords[curWordLower] then
+          local newWord = cc.config.specialWords[curWordLower]
           local _, uppercaseCount = curWord:gsub("%u", "")
-          if uppercaseCount > (#curWord * critter_comms_config.allcapsPercentage) then
+          if uppercaseCount > (#curWord * cc.config.allcapsPercentage) then
             newWord = newWord:upper()
           end
-          newMessage:append(curWord, correctCapitalization(curWord, newWord))
+          newMessage:append(curWord, cc.correctCapitalization(curWord, newWord))
         else -- word contained blacklisted characters, did not succeed random rolls to be allowed, and was not a special case word, so we replace it with noises
-          local newWord = addNoise(curWord, "", critter_comms_config.startNoises)
+          local newWord = cc.addNoise(curWord, "", cc.config.startNoises)
           if (#newWord < #curWord) then
             while #newWord < #curWord do
-              newWord = addNoise(curWord, newWord, critter_comms_config.extendNoises)
+              newWord = cc.addNoise(curWord, newWord, cc.config.extendNoises)
             end
           end
           newMessage:append(curWord,
-            correctCapitalization(curWord, newWord))
+            cc.correctCapitalization(curWord, newWord))
         end
       end
     else -- no more words found, copy the remaining characters to the new message
@@ -472,31 +473,31 @@ local critterMessageQueue = {
 local userLastMessageNumber = {
 
 }
-local function processCommand(message, phrase, hide, target, enable, allow)
+function cc.processCommand(message, phrase, hide, target, enable, allow)
   local level = player:getExperienceLevel()
   if message:find(phrase) then
     if debug then print("found command: ", phrase, "\n allow: ", allow) end
     if allow then
       if enable then
-        if (not (critter_comms_config.speak and critter_comms_config.brain)) and (level > critter_comms_config.minimumSpeechLevel) and not critter_comms_config[target] then
-          hotBarNotification(critter_comms_config.notifications.speechLost)
+        if (not (cc.config.speak and cc.config.brain)) and (level > cc.config.minimumSpeechLevel) and not cc.config[target] then
+          cc.hotBarNotification(cc.config.notifications.speechLost)
         end
       else
-        if (critter_comms_config.speak or critter_comms_config.brain) and (level > critter_comms_config.minimumSpeechLevel) and critter_comms_config[target] then
-          local notif = critter_comms_config.notifications.wordsGained
-          critter_comms_config[target] = enable -- doing it early here for easier calcs
-          if (not (critter_comms_config.speak or critter_comms_config.brain)) and (level > critter_comms_config.normalSpeechLevel) then
-            notif = critter_comms_config.notifications.speechGained
+        if (cc.config.speak or cc.config.brain) and (level > cc.config.minimumSpeechLevel) and cc.config[target] then
+          local notif = cc.config.notifications.wordsGained
+          cc.config[target] = enable -- doing it early here for easier calcs
+          if (not (cc.config.speak or cc.config.brain)) and (level > cc.config.normalSpeechLevel) then
+            notif = cc.config.notifications.speechGained
           end
-          hotBarNotification(notif)
+          cc.hotBarNotification(notif)
         end
       end
 
-      critter_comms_config[target] = enable
+      cc.config[target] = enable
     end
 
-    config:save("critterSpeak", critter_comms_config.speak)
-    config:save("critterBrain", critter_comms_config.brain)
+    config:save("critterSpeak", cc.config.speak)
+    config:save("critterBrain", cc.config.brain)
     return hide
   end
 end
@@ -511,7 +512,7 @@ function events.chat_receive_message(raw, text)
 
   local username = ((messageTable.with or {})[1] or {}).insertion
   local uuid = ((((messageTable.with or {})[1] or {}).hoverEvent or {}).contents or {}).id
-  local message = condenseText((messageTable.with or {})[2])
+  local message = cc.condenseText((messageTable.with or {})[2])
   local valid = not (
     (messageTable.with or {})[3]
     or translationParseBlacklist[(messageTable.translate or "")]
@@ -538,32 +539,32 @@ function events.chat_receive_message(raw, text)
   end
   if username and (type(message) == "string") and (valid or speakerBlock) then
     local allowCommand = true
-    if critter_comms_config.userListMode then -- whitelist, do nothing if not in list
-      if not critter_comms_config.userList[username] then allowCommand = false end
+    if cc.config.userListMode then -- whitelist, do nothing if not in list
+      if not cc.config.userList[username] then allowCommand = false end
     else                                      -- blacklist, do nothing if in the list
-      if critter_comms_config.userList[username] then allowCommand = false end
+      if cc.config.userList[username] then allowCommand = false end
     end
 
     if not outgoing then
-      for phrase, hide in pairs(critter_comms_config.enableSpeak or {}) do
-        if processCommand(message, phrase, hide, "speak", true, allowCommand) then return false end
+      for phrase, hide in pairs(cc.config.enableSpeak or {}) do
+        if cc.processCommand(message, phrase, hide, "speak", true, allowCommand) then return false end
       end
-      for phrase, hide in pairs(critter_comms_config.disableSpeak or {}) do
-        if processCommand(message, phrase, hide, "speak", false, allowCommand) then return false end
+      for phrase, hide in pairs(cc.config.disableSpeak or {}) do
+        if cc.processCommand(message, phrase, hide, "speak", false, allowCommand) then return false end
       end
-      for phrase, hide in pairs(critter_comms_config.enableBrain or {}) do
-        if processCommand(message, phrase, hide, "brain", true, allowCommand) then return false end
+      for phrase, hide in pairs(cc.config.enableBrain or {}) do
+        if cc.processCommand(message, phrase, hide, "brain", true, allowCommand) then return false end
       end
-      for phrase, hide in pairs(critter_comms_config.disableBrain or {}) do
-        if processCommand(message, phrase, hide, "brain", false, allowCommand) then return false end
+      for phrase, hide in pairs(cc.config.disableBrain or {}) do
+        if cc.processCommand(message, phrase, hide, "brain", false, allowCommand) then return false end
       end
-      for phrase, hide in pairs(critter_comms_config.enableAll or {}) do
-        processCommand(message, phrase, hide, "speak", true, allowCommand)
-        if processCommand(message, phrase, hide, "brain", true, allowCommand) then return false end
+      for phrase, hide in pairs(cc.config.enableAll or {}) do
+        cc.processCommand(message, phrase, hide, "speak", true, allowCommand)
+        if cc.processCommand(message, phrase, hide, "brain", true, allowCommand) then return false end
       end
-      for phrase, hide in pairs(critter_comms_config.disableAll or {}) do
-        processCommand(message, phrase, hide, "speak", false, allowCommand)
-        if processCommand(message, phrase, hide, "brain", false, allowCommand) then return false end
+      for phrase, hide in pairs(cc.config.disableAll or {}) do
+        cc.processCommand(message, phrase, hide, "speak", false, allowCommand)
+        if cc.processCommand(message, phrase, hide, "brain", false, allowCommand) then return false end
       end
     end
     if (incoming and (player:getName() == username)) then return end
@@ -583,7 +584,7 @@ function events.chat_receive_message(raw, text)
 
         local canUnderstand = true
         for _, v in ipairs(variables.speakKinds or {}) do
-          canUnderstand = (critter_comms_config.understandKinds or {})[v] or false
+          canUnderstand = (cc.config.understandKinds or {})[v] or false
           if canUnderstand then break end
         end
 
@@ -606,13 +607,13 @@ function events.chat_receive_message(raw, text)
       end
     end
     local level = player:getExperienceLevel()
-    if (critter_comms_config.brain or (level < critter_comms_config.normalSpeechLevel)) then
+    if (cc.config.brain or (level < cc.config.normalSpeechLevel)) then
       if debug then print("Non critter message found, obfuscating words beyond speech level.") end
       local length = #message
       local newMessage = _Message:new()
       local pos = 1
       while pos <= length do
-        local wordStart, wordEnd = findNextWord(message, pos)
+        local wordStart, wordEnd = cc.findNextWord(message, pos)
         if wordStart then
           if pos < wordStart then
             local misc = message:sub(pos, wordStart - 1)
@@ -648,7 +649,7 @@ function events.tick()
 
   if not didPostInit then
     didPostInit = true
-    postInit()
+    cc.postInit()
   end
   local queued = critterMessageQueue[1]
   if queued then
@@ -674,7 +675,7 @@ function events.tick()
             print("checking message history: ", i)
             printTable(curMessageJson, 3)
           end
-          local curMessageText = condenseText(((curMessageJson or {}).extra or {})[4])
+          local curMessageText = cc.condenseText(((curMessageJson or {}).extra or {})[4])
           local curMessageUsername = (((curMessageJson or {}).extra or {})[2] or {}).insertion
           if (curMessageText == queued.message) and (curMessageUsername == queued.username) then
             userLastMessageNumber[queued.username] = critterMessageNum or (lastMessageNumber + 1)
@@ -696,21 +697,23 @@ function events.tick()
     end
   end
   local level = player:getExperienceLevel()
-  if critter_comms_config.speak and critter_comms_config.brain then
+  if cc.config.speak and cc.config.brain then
   elseif level > prevLevel then
-    if (prevLevel < critter_comms_config.normalSpeechLevel) and (level >= critter_comms_config.normalSpeechLevel) then
-      hotBarNotification(critter_comms_config.notifications.speechGained)
-    elseif level >= critter_comms_config.normalSpeechLevel then
-    elseif level >= critter_comms_config.minimumSpeechLevel then
-      hotBarNotification(critter_comms_config.notifications.wordsGained)
+    if (prevLevel < cc.config.normalSpeechLevel) and (level >= cc.config.normalSpeechLevel) then
+      cc.hotBarNotification(cc.config.notifications.speechGained)
+    elseif level >= cc.config.normalSpeechLevel then
+    elseif level >= cc.config.minimumSpeechLevel then
+      cc.hotBarNotification(cc.config.notifications.wordsGained)
     end
   elseif level < prevLevel then
-    if (prevLevel >= critter_comms_config.minimumSpeechLevel) and (level < critter_comms_config.minimumSpeechLevel) then
-      hotBarNotification(critter_comms_config.notifications.speechLost)
-    elseif level >= critter_comms_config.normalSpeechLevel then
-    elseif level >= critter_comms_config.minimumSpeechLevel then
-      hotBarNotification(critter_comms_config.notifications.wordsLost)
+    if (prevLevel >= cc.config.minimumSpeechLevel) and (level < cc.config.minimumSpeechLevel) then
+      cc.hotBarNotification(cc.config.notifications.speechLost)
+    elseif level >= cc.config.normalSpeechLevel then
+    elseif level >= cc.config.minimumSpeechLevel then
+      cc.hotBarNotification(cc.config.notifications.wordsLost)
     end
   end
   prevLevel = level
 end
+
+return cc
