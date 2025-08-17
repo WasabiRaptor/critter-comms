@@ -40,22 +40,26 @@ local cc = {
   config = require("critter_comms_config"),
   commands = {},
   messageNumber = 0,
-  prevLevel = 0,
+  prev = {
+    level = 0,
+    speak = false,
+    brain = false,
+  },
   temp = {
     brain = {
       messages = 0,
-      time = 0
+      time = 0,
     },
     speak = {
       messages = 0,
-      time = 0
+      time = 0,
     },
     all = {
       messages = 0,
-      time = 0
-    }
+      time = 0,
+    },
   },
-  stolenWords = {}
+  stolenWords = {},
 }
 
 avatar:store("isCritter", true)
@@ -77,34 +81,38 @@ if cc.config.debug then print("Critter Comms debug messages are enabled.") end
 ---@return boolean
 function cc.checkCritterBrain(randomRoll)
   return cc.config.brain
-    or (cc.temp.all.time > 0)
-    or (cc.temp.all.messages > 0)
-    or (cc.temp.brain.time > 0)
-    or (cc.temp.brain.messages > 1)
-    or ((randomRoll and math.random(table.unpack(cc.config.speechLevels)) or cc.config.speechLevels[1]) > player:getExperienceLevel())
-
+      or (cc.temp.all.time > 0)
+      or (cc.temp.all.messages > 0)
+      or (cc.temp.brain.time > 0)
+      or (cc.temp.brain.messages > 0)
+      or
+      ((randomRoll and math.random(table.unpack(cc.config.speechLevels)) or cc.config.speechLevels[1]) > player:getExperienceLevel())
 end
 
 ---@param randomRoll boolean
 ---@return boolean
 function cc.checkCritterSpeak(randomRoll)
-  return cc.config.brain
+  return cc.config.speak
       or (cc.temp.all.time > 0)
       or (cc.temp.all.messages > 0)
       or (cc.temp.speak.time > 0)
-      or (cc.temp.speak.messages > 1)
-      or ((randomRoll and math.random(table.unpack(cc.config.speechLevels)) or cc.config.speechLevels[1]) > player:getExperienceLevel())
+      or (cc.temp.speak.messages > 0)
+      or
+      ((randomRoll and math.random(table.unpack(cc.config.speechLevels)) or cc.config.speechLevels[1]) > player:getExperienceLevel())
 end
 
 ---@return boolean
 function cc.checkWordsGained()
   local level = player:getExperienceLevel()
-  return (level > cc.prevLevel) and (cc.config.speechLevels[1] < level) and (cc.config.speechLevels[2] > level)
+  return (level > cc.prev.level) and (cc.config.speechLevels[1] < level) and
+      (cc.config.speechLevels[2] > level)
 end
+
 ---@return boolean
 function cc.checkWordsLost()
   local level = player:getExperienceLevel()
-  return (level < cc.prevLevel) and (cc.config.speechLevels[1] < level) and (cc.config.speechLevels[2] > level)
+  return (level < cc.prev.level) and (cc.config.speechLevels[1] < level) and
+      (cc.config.speechLevels[2] > level)
 end
 
 ---@param str string
@@ -116,6 +124,7 @@ function cc.hashString(str)
   end
   return hash
 end
+
 function cc.condenseText(textTable)
   if type(textTable) == "table" and textTable[1] then
     local out = ""
@@ -129,7 +138,6 @@ function cc.condenseText(textTable)
     return textTable
   end
 end
-
 
 ---comment
 ---@param curWord string
@@ -146,7 +154,8 @@ function cc.addNoise(curWord, newWord, noiseTable)
     noisecount = noisecount + 1
   end
 
-  local from, to = curWord:find("^" .. curWord:sub((#newWord + #noise + 1), #newWord + #noise + 1) .. "+",
+  local from, to = curWord:find(
+    "^" .. curWord:sub((#newWord + #noise + 1), #newWord + #noise + 1) .. "+",
     #newWord + #noise + 2) -- check if the same character has been repeated
   if not to then
     if ((#newWord + #noise + cc.config.stretchLastNoise) >= #curWord) then
@@ -163,7 +172,7 @@ function cc.addNoise(curWord, newWord, noiseTable)
     start, middle, ending = start:upper(), middle:upper(), ending:upper()
   end
   newWord = newWord .. start
-    newWord = newWord .. middle
+  newWord = newWord .. middle
   if #middle > 0 then
     while #newWord < (to - #ending) do
       newWord = newWord .. middle
@@ -208,7 +217,7 @@ function cc.findNextWord(msg, pos)
   end
 
   local foundLetter_1, foundLetter_2 = lower:find("%a+", pos) -- find letters
-  local foundDigit_1, foundDigit_2 = lower:find("%d+", pos)   -- find digits
+  local foundDigit_1, foundDigit_2 = lower:find("%d+", pos)  -- find digits
 
   if foundLetter_1 and foundDigit_1 then
     if foundLetter_1 < foundDigit_1 then
@@ -262,8 +271,8 @@ function _Message:critterParse(isCritter, canUnderstand)
     for i, v in ipairs(self.message) do
       local word, newWord = table.unpack(v)
       math.randomseed(cc.hashString(word:lower())) -- set the seed to the hash of the word so any randomness with that word is consistent
-      if newWord -- critter word or something else critters can understand so use original word
-          or (not cc.checkCritterBrain(true)) -- if not a critter word, check if we can understand it
+      if newWord                                -- critter word or something else critters can understand so use original word
+          or (not cc.checkCritterBrain(true))   -- if not a critter word, check if we can understand it
           or cc.config.obfuscateMethod == "none"
           or cc.config.understandWhitelist[word:lower()]
           or cc.config.speakWhitelist[word:lower()]
@@ -317,8 +326,8 @@ function _Message:critterParse(isCritter, canUnderstand)
   for i, v in ipairs(self.message) do
     local word, newWord = table.unpack(v)
     math.randomseed(cc.hashString(word:lower())) -- set the seed to the hash of the word so any randomness with that word is consistent
-    if newWord -- critter word or something else critters can understand so use original word
-        or (not cc.checkCritterBrain(true)) -- if not a critter word, check if we can understand it
+    if newWord                                 -- critter word or something else critters can understand so use original word
+        or (not cc.checkCritterBrain(true))    -- if not a critter word, check if we can understand it
         or cc.config.obfuscateMethod == "none"
         or cc.config.understandWhitelist[word:lower()]
         or cc.config.speakWhitelist[word:lower()]
@@ -388,14 +397,14 @@ function pings.sent_chat_message(messageJson)
   avatar:store("messageNumber", cc.messageNumber)
   table.insert(cc.backlog, str)
   local old = table.remove(cc.backlog, 1)
-  if (old ~= str) and (old ~= cc.backlog[#cc.backlog-1]) and (old ~= cc.backlog[#cc.backlog-2]) and (old ~= cc.backlog[#cc.backlog-3]) and (old ~= cc.backlog[#cc.backlog-4]) then
+  if (old ~= str) and (old ~= cc.backlog[#cc.backlog - 1]) and (old ~= cc.backlog[#cc.backlog - 2]) and (old ~= cc.backlog[#cc.backlog - 3]) and (old ~= cc.backlog[#cc.backlog - 4]) then
     avatar:store("msg:" .. old)
     avatar:store("msgNum:" .. old)
   end
 end
 
 function events.entity_init()
-  cc.prevLevel = player:getExperienceLevel()
+  cc.prev.level = player:getExperienceLevel()
 end
 
 function cc.parseNameplate(input)
@@ -403,6 +412,7 @@ function cc.parseNameplate(input)
     return cc.condenseText(parseJson(input))
   end
 end
+
 function cc.postInit()
   -- add all words in player's name to the understand whitelist so they can always know when people are talking about them
   -- for _, name in ipairs({
@@ -452,7 +462,8 @@ function events.chat_send_message(message)
   elseif message == "!debug" then
     cc.config.debug = not cc.config.debug
     config:save("debug", cc.config.debug)
-    print(cc.config.debug and "Critter Comms debug messages enabled." or "Critter Comms debug messages disabled.")
+    print(cc.config.debug and "Critter Comms debug messages enabled." or
+      "Critter Comms debug messages disabled.")
     return
   end
 
@@ -479,7 +490,7 @@ function events.chat_send_message(message)
         newMessage:append(curWord, true)
       elseif not (curWordLower:find(cc.config.speechBlacklist) or cc.config.caseSensitiveSpecialWords[curWord] or cc.config.specialWords[curWordLower]) then -- doesn't have any blacklisted characters and isn't a special word, copy as is and don't do any rolls
         newMessage:append(curWord, true)
-      elseif not (intentional or cc.stolenWords[curWordLower] or cc.checkCritterSpeak(true)) then -- intentionally speaking in critter speak, or failed speak checks
+      elseif not (intentional or cc.stolenWords[curWordLower] or cc.checkCritterSpeak(true)) then                                                         -- intentionally speaking in critter speak, or failed speak checks
         newMessage:append(curWord)
       else
         wordsReplaced = wordsReplaced + 1
@@ -514,8 +525,9 @@ function events.chat_send_message(message)
   if cc.config.debug then print("original message: ", message) end
   host:appendChatHistory(message)
   newMessage:ping()
-  cc.temp.all.messages = math.max((cc.temp.all.messages -1), 0)
-  cc.temp.speak.messages = math.max((cc.temp.speak.messages -1), 0)
+  cc.prev.message = newMessage
+  cc.temp.all.messages = math.max((cc.temp.all.messages - 1), 0)
+  cc.temp.speak.messages = math.max((cc.temp.speak.messages - 1), 0)
   return prepend .. newMessage:getString()
 end
 
@@ -535,10 +547,10 @@ function cc.processCommand(message, allow)
   local command
   if prefixStart and prefixEnd then
     hide = true
-    local commandStart, commandEnd = cc.findNextWord(message, prefixEnd+1)
+    local commandStart, commandEnd = cc.findNextWord(message, prefixEnd + 1)
     command = {
-      command = message:sub(commandStart, commandEnd),
-      args = {}
+      name = message:sub(commandStart, commandEnd),
+      args = {},
     }
     local pos = commandEnd + 1
     local length = #message
@@ -546,10 +558,10 @@ function cc.processCommand(message, allow)
       local wordStart, wordEnd = cc.findNextWord(message, pos)
       if wordStart and wordEnd then
         pos = wordEnd + 1
-        local word = message:sub(wordStart, wordEnd):toLower()
-        if word == "true" then
+        local word = message:sub(wordStart, wordEnd)
+        if word:lower() == "true" then
           table.insert(command.args, true)
-        elseif word == "false" then
+        elseif word:lower() == "false" then
           table.insert(command.args, false)
         elseif tonumber(word) then
           table.insert(command.args, tonumber(word))
@@ -562,49 +574,31 @@ function cc.processCommand(message, allow)
     end
   else
     for commandPhrase, v in pairs(cc.config.commandPhrases) do
-      if message:toLower():find(commandPhrase) then
+      if message:lower():find(commandPhrase) then
         command = v
         break
       end
     end
   end
-  if command and allow then
-    cc.commands[command.command](table.unpack(command.args))
+  if command and allow and (type(cc.commands[command.name]) == "function") then
+    cc.commands[command.name](table.unpack(command.args))
   elseif command then
 
   end
   return hide
 end
+
 function cc.commands.speak(enable)
-  local wasEnabled = (cc.checkCritterBrain(false) or cc.checkCritterSpeak(false))
+  print(enable)
   cc.config.speak = enable
-  local isEnabled = (cc.checkCritterBrain(false) or cc.checkCritterSpeak(false))
-  if isEnabled and not wasEnabled then
-    cc.hotBarNotification(cc.config.notifications.speechLost)
-  elseif wasEnabled and not isEnabled then
-    cc.hotBarNotification(cc.config.notifications.speechGained)
-  elseif cc.checkWordsGained() then
-    cc.hotBarNotification(cc.config.notifications.wordsGained)
-  elseif cc.checkWordsLost() then
-    cc.hotBarNotification(cc.config.notifications.wordsLost)
-  end
   config:save("critterSpeak", cc.config.speak)
 end
+
 function cc.commands.brain(enable)
-  local wasEnabled = (cc.checkCritterBrain(false) or cc.checkCritterSpeak(false))
   cc.config.brain = enable
-  local isEnabled = (cc.checkCritterBrain(false) or cc.checkCritterSpeak(false))
-  if isEnabled and not wasEnabled then
-    cc.hotBarNotification(cc.config.notifications.speechLost)
-  elseif wasEnabled and not isEnabled then
-    cc.hotBarNotification(cc.config.notifications.speechGained)
-  elseif cc.checkWordsGained() then
-    cc.hotBarNotification(cc.config.notifications.wordsGained)
-  elseif cc.checkWordsLost() then
-    cc.hotBarNotification(cc.config.notifications.wordsLost)
-  end
   config:save("critterBrain", cc.config.brain)
 end
+
 function cc.commands.all(enable)
   cc.commands.speak(enable)
   cc.commands.brain(enable)
@@ -613,6 +607,7 @@ end
 function cc.commands.addTime(name, time)
   cc.temp[name].time = cc.temp[name].time + (time * 60)
 end
+
 function cc.commands.setTime(name, time)
   cc.temp[name].time = (time * 60)
 end
@@ -620,10 +615,39 @@ end
 function cc.commands.addMessages(name, messages)
   cc.temp[name].messages = cc.temp[name].messages + messages
 end
+
 function cc.commands.setMessages(name, messages)
   cc.temp[name].messages = messages
 end
 
+function cc.commands.stealWords(...)
+  for _, v in ipairs({ ... }) do
+    cc.stolenWords[tostring(v):lower()] = true
+  end
+  cc.hotBarNotification(cc.config.notifications.wordsLost)
+end
+
+function cc.commands.returnWords(...)
+  for _, v in ipairs({ ... }) do
+    cc.stolenWords[tostring(v):lower()] = nil
+  end
+  cc.hotBarNotification(cc.config.notifications.wordsGained)
+end
+
+function cc.commands.returnAllWords()
+  cc.stolenWords = {}
+  cc.hotBarNotification(cc.config.notifications.wordsGained)
+end
+
+function cc.commands.stealPrevMessage()
+  if cc.prev.message then
+    for _, v in ipairs(cc.prev.message.message) do
+      local word, newWord = table.unpack(v)
+      cc.stolenWords[word:lower()] = true
+    end
+  end
+  cc.hotBarNotification(cc.config.notifications.wordsLost)
+end
 
 function events.chat_receive_message(raw, text)
   if not player:isLoaded() then return end
@@ -665,7 +689,7 @@ function events.chat_receive_message(raw, text)
     local allowCommand = true
     if cc.config.userListMode then -- whitelist, do nothing if not in list
       if not cc.config.userList[username] then allowCommand = false end
-    else                                      -- blacklist, do nothing if in the list
+    else                         -- blacklist, do nothing if in the list
       if cc.config.userList[username] then allowCommand = false end
     end
 
@@ -695,27 +719,34 @@ function events.chat_receive_message(raw, text)
 
         if critterMessage and (newMessageNumber > lastMessageNumber) then
           userLastMessageNumber[username] = critterMessageNum or (lastMessageNumber + 1)
-          messageTable.with[2] = _Message:new(critterMessage):critterParse(true, canUnderstand)
+          messageTable.with[2] = _Message:new(critterMessage):critterParse(true,
+            canUnderstand)
           return toJson(messageTable)
         else
-          if cc.config.debug then print("obfuscating critter message, adding message to parsing queue.") end
+          if cc.config.debug then
+            print(
+              "obfuscating critter message, adding message to parsing queue.")
+          end
           messageTable.with[2] = { text = message, obfuscated = true, font = "alt" } -- temporarily obfuscate until we can parse it with the critter message data
           table.insert(critterMessageQueue, {
             username = username or "",
             uuid = uuid or "",
             message = message or "",
             canUnderstand = canUnderstand or false,
-            attempts = 0
+            attempts = 0,
           })
           return toJson(messageTable)
         end
       end
     end
     if cc.checkCritterBrain(true) then
-      cc.temp.all.messages = math.max((cc.temp.all.messages -1), 0)
-      cc.temp.brain.messages = math.max((cc.temp.brain.messages -1), 0)
+      cc.temp.all.messages = math.max((cc.temp.all.messages - 1), 0)
+      cc.temp.brain.messages = math.max((cc.temp.brain.messages - 1), 0)
 
-      if cc.config.debug then print("Non critter message found, obfuscating words beyond speech level.") end
+      if cc.config.debug then
+        print(
+          "Non critter message found, obfuscating words beyond speech level.")
+      end
       local length = #message
       local newMessage = _Message:new()
       local pos = 1
@@ -751,11 +782,11 @@ function events.chat_receive_message(raw, text)
 end
 
 local didPostInit = false
-local dt = 1/20
+local dt = 1 / 20
 function events.tick()
   if not host:isHost() then return end -- everything past this is for host only
   for k, v in pairs(cc.temp) do
-    v.time = math.max(0, v.time-dt)
+    v.time = math.max(0, v.time - dt)
   end
 
   if not didPostInit then
@@ -775,8 +806,10 @@ function events.tick()
       userLastMessageNumber[queued.username] = 0
       lastMessageNumber = 0
     end
-    if cc.config.debug then print("finding queued message: ", queued.message, "\n attempt: ",
-        queued.attempts) end
+    if cc.config.debug then
+      print("finding queued message: ", queued.message, "\n attempt: ",
+        queued.attempts)
+    end
 
     if critterMessage and (newMessageNumber > lastMessageNumber) then
       for i = 1, 10 do
@@ -788,9 +821,11 @@ function events.tick()
             printTable(curMessageJson, 3)
           end
           local curMessageText = cc.condenseText(((curMessageJson or {}).extra or {})[4])
-          local curMessageUsername = (((curMessageJson or {}).extra or {})[2] or {}).insertion
+          local curMessageUsername = (((curMessageJson or {}).extra or {})[2] or {})
+              .insertion
           if (curMessageText == queued.message) and (curMessageUsername == queued.username) then
-            userLastMessageNumber[queued.username] = critterMessageNum or (lastMessageNumber + 1)
+            userLastMessageNumber[queued.username] = critterMessageNum or
+                (lastMessageNumber + 1)
 
             curMessageJson.extra[4] = _Message:new(critterMessage):critterParse(true,
               queued.canUnderstand)
@@ -809,16 +844,23 @@ function events.tick()
       table.remove(critterMessageQueue, 1)
     end
   end
-  if cc.checkCritterSpeak(false) or cc.checkCritterBrain(false) then
-    -- do nothing
-  else
-    if cc.checkWordsGained() then
-      cc.hotBarNotification(cc.config.notifications.wordsGained)
-    elseif cc.checkWordsLost() then
-      cc.hotBarNotification(cc.config.notifications.wordsLost)
-    end
+  local speak = cc.checkCritterSpeak(false)
+  local brain = cc.checkCritterBrain(false)
+  local isEnabled = speak or brain
+  local wasEnabled = cc.prev.speak or cc.prev.brain
+  if isEnabled and not wasEnabled then
+    cc.hotBarNotification(cc.config.notifications.speechLost)
+  elseif wasEnabled and not isEnabled then
+    cc.hotBarNotification(cc.config.notifications.speechGained)
+  elseif cc.checkWordsGained() then
+    cc.hotBarNotification(cc.config.notifications.wordsGained)
+  elseif cc.checkWordsLost() then
+    cc.hotBarNotification(cc.config.notifications.wordsLost)
   end
-  cc.prevLevel = player:getExperienceLevel()
+  cc.prev.speak = speak
+  cc.prev.brain = brain
+
+  cc.prev.level = player:getExperienceLevel()
 end
 
 return cc

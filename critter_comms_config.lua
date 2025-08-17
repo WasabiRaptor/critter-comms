@@ -10,7 +10,7 @@
          /\  ___\   /\  __ \   /\ "-./  \   /\ "-./  \   /\  ___\
          \ \ \____  \ \ \/\ \  \ \ \-./\ \  \ \ \-./\ \  \ \___  \
           \ \_____\  \ \_____\  \ \_\ \ \_\  \ \_\ \ \_\  \/\_____\
-           \/_____/   \/_____/   \/_/  \/_/   \/_/  \/_/   \/_____/ v1.1
+           \/_____/   \/_____/   \/_/  \/_/   \/_/  \/_/   \/_____/ v1.2
 
                         fox to fox communication
 
@@ -61,6 +61,17 @@ temporarily enables the critter mode for the specified amount of messages, addin
 setMessages <speak|brain|all> <number>
 temporarily enables the critter mode for the specified amount of messages, adding onto the existing count
 
+stealWords <word> ...
+"steals" words from one's speech, making them unable to use them and critter words taking their place
+
+returnWords <word> ...
+returns words that have been stolen to ones speech
+
+returnAllWords
+returns all words that have been stolen
+
+stealPrevMessage
+steals all the words used in the previous message sent
 ]]
 
 -- command to intentionally speak in critter speak yourself even if above level
