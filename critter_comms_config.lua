@@ -30,40 +30,43 @@ critter_comms_config.brain = false  -- critter brain enabled, this makes it so y
 -- if this is true, don't critterify text when whispering to yourself, so whispering a special command to yourself will get it parsed
 critter_comms_config.selfWhispers = true
 
--- map of string matches to appear in chat that activate or deactivate critter speak mode
--- these can be activated by other people saying them or whispering to you
--- these ones will enable or disable you having to talk in critter speak
-critter_comms_config.enableSpeak = {
-  -- any match strings defined in the list will be accepted as a command
-  ["^%!foxspeak true"] = true, -- true means the message will be hidden on recipt
-  -- ["silly fox critter"] = false,   -- false means the message will not be hidden on receipt
-  -- this second message doesn't have a ^ at the start, so if the phrase is found anywhere in a message, it will activate
-}
-critter_comms_config.disableSpeak = {
-  ["^%!foxspeak false"] = true,
+-- phrases that can appear anywhere in a message and are equivalent to a command with the following arguments being applied
+critter_comms_config.commandPhrases = {
+  ["silly fox critter"] = {command = "addTime", args = {"all", 5}}
 }
 
--- map of string matches to appear in chat that activate or deactivate critter brain mode
--- these ones will enable and disable you from understanding non-critter speech
-critter_comms_config.enableBrain = {
-  ["^%!foxbrain true"] = true,
-}
-critter_comms_config.disableBrain = {
-  ["^%!foxbrain false"] = true,
-}
+-- command prefix that must be used to trigger critter comms' commands
+critter_comms_config.commandPrefix = "^%!cc"
+--[[
+The commands are as follows:
 
--- map of string matches to appear in chat that activate or deactivate both modes at the same time
-critter_comms_config.enableAll = {
-  ["^%!foxmode true"] = true,
-}
-critter_comms_config.disableAll = {
-  ["^%!foxmode false"] = true,
-}
+speak <true|false>
+enables and disables critter speak, forcing one to speak only in critter noises
+
+brain <true|false>
+enables and disables critter brain, forcing one to only understand other critters
+
+all <true|false>
+enables or disables both speak and brain at the same time
+
+addTime <speak|brain|all> <number(minutes)>
+temporarily enables the critter mode for the specified amount of time, adds onto existing timers
+
+setTime <speak|brain|all> <number(minutes)>
+temporarily enables the critter mode for the specified amount of time, setting the timer to a specific value
+
+addMessages <speak|brain|all> <number>
+temporarily enables the critter mode for the specified amount of messages, adding onto the existing count
+
+setMessages <speak|brain|all> <number>
+temporarily enables the critter mode for the specified amount of messages, adding onto the existing count
+
+]]
 
 -- command to intentionally speak in critter speak yourself even if above level
 critter_comms_config.critterSpeakCommand = "^%!fox "
 
--- used to whitelist or blacklist usernames from using the activation and deactivation phrases,
+-- used to whitelist or blacklist usernames from using the commands and command phrases,
 critter_comms_config.userListMode = true -- false for blacklist, true for whitelist
 critter_comms_config.userList = {
   ["username"] = true,
@@ -108,13 +111,8 @@ critter_comms_config.understandKinds = {
 -- hex color for the notifications above the hotbar
 critter_comms_config.notificationColor = "#E27C21"
 
--- when the activation phrase has not been used, the script can still roll to replace words
--- it will roll a number between the minimum speech level and the normal speech level for each word spoken
--- if the player's exp level is less than the roll, the word is critterified,
--- the individual word toLower()'s hash is used as the seed for the roll, so each word is consistent regardless of the message or case
--- set these to -1 if you don't want to deal with this and only use activation phrases for critter speech
-critter_comms_config.minimumSpeechLevel = 5
-critter_comms_config.normalSpeechLevel = 30
+-- minimum and maximum experience levels at which the script will do rolls for whether to obfuscate or critter-ify words
+critter_comms_config.speechLevels = { -1, -1 }
 
 -- understanding messages sent by other players will obey mostly the same rules as when critter speak is applied to you
 -- what to do when obfuscating a word other people say that you can't understand as a critter
