@@ -10,7 +10,7 @@
          /\  ___\   /\  __ \   /\ "-./  \   /\ "-./  \   /\  ___\
          \ \ \____  \ \ \/\ \  \ \ \-./\ \  \ \ \-./\ \  \ \___  \
           \ \_____\  \ \_____\  \ \_\ \ \_\  \ \_\ \ \_\  \/\_____\
-           \/_____/   \/_____/   \/_/  \/_/   \/_/  \/_/   \/_____/ v1.1.2
+           \/_____/   \/_____/   \/_/  \/_/   \/_/  \/_/   \/_____/ v1.1.3
 
                         fox to fox communication
 
@@ -654,17 +654,31 @@ function events.chat_receive_message(raw, text)
   if raw:find("^%[lua%]") then return end
   local messageTable = parseJson(text)
   if cc.config.debug then
-    print("received message.")
-    printTable(messageTable, 3)
+      print("received message.")
+      printTable(messageTable, 3)
   end
 
-  local username = ((messageTable.with or {})[1] or {}).insertion
-  local uuid = ((((messageTable.with or {})[1] or {}).hoverEvent or {}).contents or {}).id
-  local message = cc.condenseText((messageTable.with or {})[2])
-  local valid = not (
-    (messageTable.with or {})[3]
-    or translationParseBlacklist[(messageTable.translate or "")]
-  )
+  local username
+  local uuid
+  local message
+  local valid = false
+
+  if (type(messageTable.with) == "table") then
+    message = cc.condenseText(messageTable.with[2])
+    valid = not (
+      messageTable.with[3]
+      or translationParseBlacklist[(messageTable.translate or "")]
+    )
+    if (type(messageTable.with[1]) == "table") then
+      username = messageTable.with[1].insertion
+      if (type(messageTable.with[1].hoverEvent) == "table")
+        and (type(messageTable.with[1].hoverEvent.contents) == "table")
+      then
+        uuid = messageTable.with[1].hoverEvent.contents.id
+      end
+    end
+  end
+
   local outgoing = messageTable.translate == "commands.message.display.outgoing"
   local incoming = messageTable.translate == "commands.message.display.incoming"
   if outgoing then -- because outgoing whispers show the other person's name, but you're the one sending the message
@@ -814,15 +828,18 @@ function events.tick()
     if critterMessage and (newMessageNumber > lastMessageNumber) then
       for i = 1, 10 do
         local curMessage = host:getChatMessage(i)
+        local curMessageJson
         if curMessage then
-          local curMessageJson = parseJson(curMessage.json)
+          curMessageJson = parseJson(curMessage.json)
+        end
+        if curMessageJson and (type(curMessageJson.extra) == "table") and (type(curMessageJson.extra[2]) == "table") then
           if cc.config.debug then
             print("checking message history: ", i)
             printTable(curMessageJson, 3)
           end
-          local curMessageText = cc.condenseText(((curMessageJson or {}).extra or {})[4])
-          local curMessageUsername = (((curMessageJson or {}).extra or {})[2] or {})
-              .insertion
+          local curMessageText = cc.condenseText(curMessageJson.extra[4])
+          local curMessageUsername = curMessageJson.extra[2].insertion
+
           if (curMessageText == queued.message) and (curMessageUsername == queued.username) then
             userLastMessageNumber[queued.username] = critterMessageNum or
                 (lastMessageNumber + 1)
