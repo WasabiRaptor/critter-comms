@@ -10,7 +10,7 @@
          /\  ___\   /\  __ \   /\ "-./  \   /\ "-./  \   /\  ___\
          \ \ \____  \ \ \/\ \  \ \ \-./\ \  \ \ \-./\ \  \ \___  \
           \ \_____\  \ \_____\  \ \_\ \ \_\  \ \_\ \ \_\  \/\_____\
-           \/_____/   \/_____/   \/_/  \/_/   \/_/  \/_/   \/_____/ v1.1.3
+           \/_____/   \/_____/   \/_/  \/_/   \/_/  \/_/   \/_____/ v1.3
 
                         fox to fox communication
 
@@ -470,7 +470,7 @@ function events.chat_send_message(message)
 		else
 			return message
 		end
-	elseif message == "!debug" then
+	elseif message == "!cc debug" then
 		cc.config.debug = not cc.config.debug
 		config:save("debug", cc.config.debug)
 		print(cc.config.debug and "Critter Comms debug messages enabled." or

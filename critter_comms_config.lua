@@ -10,7 +10,7 @@
          /\  ___\   /\  __ \   /\ "-./  \   /\ "-./  \   /\  ___\
          \ \ \____  \ \ \/\ \  \ \ \-./\ \  \ \ \-./\ \  \ \___  \
           \ \_____\  \ \_____\  \ \_\ \ \_\  \ \_\ \ \_\  \/\_____\
-           \/_____/   \/_____/   \/_/  \/_/   \/_/  \/_/   \/_____/ v1.2
+           \/_____/   \/_____/   \/_/  \/_/   \/_/  \/_/   \/_____/ v1.3
 
                         fox to fox communication
 
@@ -136,15 +136,15 @@ critter_comms_config.notifications = {
     "You're finding it even harder to form words...",
   },
   speechLost = {
-    -- messages for when speech is lost fully via the activation phrase or going below minimumSpeechLevel
+    -- messages for when speech is lost fully via the activation phrase or going below minimum speechLevel
     "You sense your grip on higher thought slipping away...",
   },
   wordsGained = {
-    -- messages when gaining some words, usually from gaining levels or deactivation phrase while below the normalSpeechLevel
+    -- messages when gaining some words, usually from gaining levels or deactivation phrase while below the maximum speechLevel
     "You think you might be able to form more words...",
   },
   speechGained = {
-    -- messages for when speech is regained fully from being above the normalSpeechLevel, and or deactivation phrase while above the level
+    -- messages for when speech is regained fully from being above the maximum speechLevel, and or deactivation phrase while above the level
     "You might be able to fully form words again...",
   },
 }
@@ -153,7 +153,7 @@ critter_comms_config.notifications = {
 -- are treated seperately (however, I have lied here for the sake of an example, as ":3c" is defined as a special word down below in the findWords table)
 
 -- match string to check if a word is allowed to stay the same, this looks like a whitelist but the way things are handled this is technically a blacklist
--- you can learn about the lua patten matching strings here https://www.lua.org/pil/20.2.html
+-- you can learn about the lua pattern matching strings here https://www.lua.org/pil/20.2.html
 -- a simple explaination of what this is, this is the patten that matches for words critters aren't allowed to say
 -- the brackets make a charset, and inside a charset, the ^ gets the complement of the character which is essentially everything that isn't said character
 -- so if we only put characters we want, and then put an ^ in front of them, we're actually making a set of every character that isn't these ones to match against
