@@ -4,20 +4,20 @@
 /\  ___\   /\  == \   /\ \   /\__  _\ /\__  _\ /\  ___\   /\  == \
 \ \ \____  \ \  __<   \ \ \  \/_/\ \/ \/_/\ \/ \ \  __\   \ \  __<
  \ \_____\  \ \_\ \_\  \ \_\    \ \_\    \ \_\  \ \_____\  \ \_\ \_\
-	\/_____/   \/_/ /_/   \/_/     \/_/     \/_/   \/_____/   \/_/ /_/
+  \/_____/   \/_/ /_/   \/_/     \/_/     \/_/   \/_____/   \/_/ /_/
 
-					______     ______     __    __     __    __     ______
-				 /\  ___\   /\  __ \   /\ "-./  \   /\ "-./  \   /\  ___\
-				 \ \ \____  \ \ \/\ \  \ \ \-./\ \  \ \ \-./\ \  \ \___  \
-					\ \_____\  \ \_____\  \ \_\ \ \_\  \ \_\ \ \_\  \/\_____\
-					 \/_____/   \/_____/   \/_/  \/_/   \/_/  \/_/   \/_____/ v1.1.3
+          ______     ______     __    __     __    __     ______
+         /\  ___\   /\  __ \   /\ "-./  \   /\ "-./  \   /\  ___\
+         \ \ \____  \ \ \/\ \  \ \ \-./\ \  \ \ \-./\ \  \ \___  \
+          \ \_____\  \ \_____\  \ \_\ \ \_\  \ \_\ \ \_\  \/\_____\
+           \/_____/   \/_____/   \/_/  \/_/   \/_/  \/_/   \/_____/ v1.1.3
 
-												fox to fox communication
+                        fox to fox communication
 
-												fox to fox conversation
+                        fox to fox conversation
 
-										Made by Wasabi_Raptor and Zygahedron
-								https://github.com/WasabiRaptor/critter-comms
+                    Made by Wasabi_Raptor and Zygahedron
+                https://github.com/WasabiRaptor/critter-comms
 ]]
 
 -- print("reloaded")
@@ -49,31 +49,42 @@ local cc = {
 		brain = {
 			messages = 0,
 			time = 0,
+			timeActive = false
 		},
 		speak = {
 			messages = 0,
 			time = 0,
+			timeActive = false
 		},
 		all = {
 			messages = 0,
 			time = 0,
+			timeActive = false
 		},
 	},
 	stolenWords = {},
 }
 
-avatar:store("isCritter", true)
-avatar:store("speakKinds", cc.config.speakKinds or { "critter" })
-avatar:store("messageNumber", cc.messageNumber)
-if cc.config.persist and config:load("critterPersist") then
-	cc.config.speak = config:load("critterSpeak") or false
-	cc.config.brain = config:load("critterBrain") or false
-	cc.config.debug = config:load("critterDebug") or false
+avatar:store("cc_isCritter", true)
+avatar:store("cc_speakKinds", cc.config.speakKinds or { "critter" })
+avatar:store("cc_messageNumber", cc.messageNumber)
+if cc.config.persist and config:load("cc_persist") then
+	cc.config.speak = config:load("cc_speak") or false
+	cc.config.brain = config:load("cc_brain") or false
+	cc.config.debug = config:load("cc_debug") or false
+	cc.stolenWords = config:load("cc_stolenWords") or cc.stolenWords
+	cc.temp.brain = config:load("cc_temp_brain") or cc.temp.brain
+	cc.temp.speak = config:load("cc_temp_speak") or cc.temp.speak
+	cc.temp.all = config:load("cc_temp_all") or cc.temp.all
 else
-	config:save("critterPersist", cc.config.persist)
-	config:save("critterSpeak", cc.config.speak)
-	config:save("critterBrain", cc.config.brain)
-	config:save("critterDebug", cc.config.debug)
+	config:save("cc_persist", cc.config.persist)
+	config:save("cc_speak", cc.config.speak)
+	config:save("cc_brain", cc.config.brain)
+	config:save("cc_debug", cc.config.debug)
+	config:save("cc_stolenWords", cc.stolenWords)
+	config:save("cc_temp_brain", cc.temp.brain)
+	config:save("cc_temp_speak", cc.temp.speak)
+	config:save("cc_temp_all", cc.temp.all)
 end
 if cc.config.debug then print("Critter Comms debug messages are enabled.") end
 
@@ -377,29 +388,29 @@ function _Message:ping()
 end
 
 cc.backlog = {
-	"a",
-	"a",
-	"a",
-	"a",
-	"a",
-	"a",
-	"a",
-	"a",
-	"a",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
 
 }
 function pings.sent_chat_message(messageJson)
 	local message = _Message:new(parseJson(messageJson))
 	cc.messageNumber = cc.messageNumber + 1
 	local str = message:getString()
-	avatar:store("msg:" .. str, message.message)
-	avatar:store("msgNum:" .. str, cc.messageNumber)
-	avatar:store("messageNumber", cc.messageNumber)
+	avatar:store("cc_msg:" .. str, message.message)
+	avatar:store("cc_msgNum:" .. str, cc.messageNumber)
+	avatar:store("cc_messageNumber", cc.messageNumber)
 	table.insert(cc.backlog, str)
 	local old = table.remove(cc.backlog, 1)
 	if (old ~= str) and (old ~= cc.backlog[#cc.backlog - 1]) and (old ~= cc.backlog[#cc.backlog - 2]) and (old ~= cc.backlog[#cc.backlog - 3]) and (old ~= cc.backlog[#cc.backlog - 4]) then
-		avatar:store("msg:" .. old)
-		avatar:store("msgNum:" .. old)
+		avatar:store("cc_msg:" .. old)
+		avatar:store("cc_msgNum:" .. old)
 	end
 end
 
@@ -528,6 +539,10 @@ function events.chat_send_message(message)
 	cc.prev.message = newMessage
 	cc.temp.all.messages = math.max((cc.temp.all.messages - 1), 0)
 	cc.temp.speak.messages = math.max((cc.temp.speak.messages - 1), 0)
+	cc.temp.all.timeActive = true
+	cc.temp.speak.timeActive = true
+	config:save("cc_temp_speak", cc.temp.speak)
+	config:save("cc_temp_all", cc.temp.all)
 	return prepend .. newMessage:getString()
 end
 
@@ -625,6 +640,7 @@ function cc.commands.stealWords(...)
 		cc.stolenWords[tostring(v):lower()] = true
 	end
 	cc.hotBarNotification(cc.config.notifications.wordsLost)
+	config:save("cc_stolenWords", cc.stolenWords)
 end
 
 function cc.commands.returnWords(...)
@@ -632,11 +648,13 @@ function cc.commands.returnWords(...)
 		cc.stolenWords[tostring(v):lower()] = nil
 	end
 	cc.hotBarNotification(cc.config.notifications.wordsGained)
+	config:save("cc_stolenWords", cc.stolenWords)
 end
 
 function cc.commands.returnAllWords()
 	cc.stolenWords = {}
 	cc.hotBarNotification(cc.config.notifications.wordsGained)
+	config:save("cc_stolenWords", cc.stolenWords)
 end
 
 function cc.commands.stealPrevMessage()
@@ -647,151 +665,178 @@ function cc.commands.stealPrevMessage()
 		end
 	end
 	cc.hotBarNotification(cc.config.notifications.wordsLost)
+	config:save("cc_stolenWords", cc.stolenWords)
+end
+
+
+function cc.recieveMessageJson(messageJson)
+	if messageJson.italic and type(messageJson.text) == "string" then -- check for it potentially being supplementaries speaker blocks
+		local findMessage_1, findMessage_2 = messageJson.text:find("%:%s+")
+		if findMessage_1 and findMessage_2 then
+			return { -- return early for this as we don't need to parse anything else
+				speakerBlock = messageJson.text:sub(1, findMessage_2) or "",
+				username = "Speaker Block",
+				message = messageJson.text:sub(findMessage_2 + 1, -1),
+			}
+		end
+	end
+
+	local out = {}
+	if (type(messageJson.with) == "table") then
+		-- return nothing as this message isn't one we should try to translate
+		if (messageJson.with[3] or translationParseBlacklist[(messageJson.translate or "")]) then return end
+
+		out.message = cc.condenseText(messageJson.with[2])
+		if (type(messageJson.with[1]) == "table") then
+			out.username = messageJson.with[1].insertion
+			if (type(messageJson.with[1].hoverEvent) == "table")
+				and (type(messageJson.with[1].hoverEvent.contents) == "table")
+			then
+				out.uuid = messageJson.with[1].hoverEvent.contents.id
+			end
+		end
+	end
+
+	if messageJson.translate == "commands.message.display.outgoing" then -- because outgoing whispers show the other person's name, but you're the one sending the message
+		out.username = player:getName()
+		out.uuid = player:getUUID()
+		out.outgoing = true
+	else
+		out.incoming = messageJson.translate == "commands.message.display.incoming"
+	end
+	if type(out.uuid) == "table" then
+		---@diagnostic disable-next-line: param-type-mismatch
+		out.uuid = client.intUUIDToString(table.unpack(out.uuid))
+	end
+
+	return out
+end
+
+function cc.recieveApplyMessage(messageJson, parsed, newMessage)
+	if parsed.speakerBlock then
+		messageJson.text = parsed.speakerBlock
+		messageJson.extra = newMessage
+	else
+		messageJson.with[2] = newMessage
+	end
+	return messageJson
+end
+function cc.recieveObfuscateMessage(messageJson, parsed)
+	messageJson.with[2] = { text = parsed.message, obfuscated = true, font = "alt" } -- temporarily obfuscate until we can parse it with the critter message data
+	return messageJson
+end
+function cc.hostMessageJson(curMessageJson)
+	if not (type(curMessageJson.extra) == "table") and (type(curMessageJson.extra[2]) == "table") then return end
+	local out = {}
+	out.message = cc.condenseText(curMessageJson.extra[4])
+	out.username = curMessageJson.extra[2].insertion
+	return out
+end
+function cc.hostApplyMessage(messageJson, newMessage)
+	messageJson.extra[4] = newMessage
+	return messageJson
 end
 
 function events.chat_receive_message(raw, text)
 	if not player:isLoaded() then return end
 	if raw:find("^%[lua%]") then return end
-	local messageTable = parseJson(text)
+	local messageJson = parseJson(text)
 	if cc.config.debug then
-			print("received message.")
-			printTable(messageTable, 3)
+		print("received message.")
+		printTable(messageJson, 3)
 	end
 
-	local username
-	local uuid
-	local message
-	local valid = false
+	local success, parsed = pcall(cc.recieveMessageJson, messageJson)
 
-	if (type(messageTable.with) == "table") then
-		message = cc.condenseText(messageTable.with[2])
-		valid = not (
-			messageTable.with[3]
-			or translationParseBlacklist[(messageTable.translate or "")]
-		)
-		if (type(messageTable.with[1]) == "table") then
-			username = messageTable.with[1].insertion
-			if (type(messageTable.with[1].hoverEvent) == "table")
-				and (type(messageTable.with[1].hoverEvent.contents) == "table")
-			then
-				uuid = messageTable.with[1].hoverEvent.contents.id
-			end
-		end
-	end
-
-	local outgoing = messageTable.translate == "commands.message.display.outgoing"
-	local incoming = messageTable.translate == "commands.message.display.incoming"
-	if outgoing then -- because outgoing whispers show the other person's name, but you're the one sending the message
-		username = player:getName()
-		uuid = player:getUUID()
-	end
-
-	local speakerBlock = false
-	if messageTable.italic and type(messageTable.text) == "string" then -- check for it potentially being supplementaries speaker blocks
-		local findMessage_1, findMessage_2 = messageTable.text:find("%:%s+")
-		if findMessage_1 and findMessage_2 then
-			speakerBlock = messageTable.text:sub(1, findMessage_2)
-			username = "Speaker Block"
-			message = messageTable.text:sub(findMessage_2 + 1, -1)
-		end
-	end
-
-	if type(uuid) == "table" then
-		uuid = client.intUUIDToString(table.unpack(uuid))
-	end
-	if username and (type(message) == "string") and (valid or speakerBlock) then
+	if success and parsed and parsed.username and parsed.message then
 		local allowCommand = true
 		if cc.config.userListMode then -- whitelist, do nothing if not in list
-			if not cc.config.userList[username] then allowCommand = false end
+			if not cc.config.userList[parsed.username] then allowCommand = false end
 		else                         -- blacklist, do nothing if in the list
-			if cc.config.userList[username] then allowCommand = false end
+			if cc.config.userList[parsed.username] then allowCommand = false end
 		end
 
-		if not outgoing then
-			if cc.processCommand(message, allowCommand) then return false end
+		if not parsed.outgoing then
+			if cc.processCommand(parsed.message, allowCommand) then return false end
 		end
-		if (incoming and (player:getName() == username)) then return end
+		if (parsed.incoming and (player:getName() == parsed.username)) then return end
 
-		if uuid then
-			local variables = world:avatarVars()[uuid] or {}
-			local isCritter = variables.isCritter
+		if parsed.uuid then
+			local variables = world:avatarVars()[parsed.uuid] or {}
+			local isCritter = variables.cc_isCritter
 			if isCritter then
-				local critterMessage = variables["msg:" .. message]
-				local critterMessageNum = variables["msgNum:" .. message]
-				local newMessageNumber = variables.messageNumber or 0
-				local lastMessageNumber = userLastMessageNumber[username] or 0
+				local critterMessage = variables["cc_msg:" .. parsed.message]
+				local critterMessageNum = variables["cc_msgNum:" .. parsed.message]
+				local newMessageNumber = variables.cc_messageNumber or 0
+				local lastMessageNumber = userLastMessageNumber[parsed.username] or 0
 				if newMessageNumber < lastMessageNumber then
-					userLastMessageNumber[username] = 0
+					userLastMessageNumber[parsed.username] = 0
 					lastMessageNumber = 0
 				end
 
 				local canUnderstand = true
-				for _, v in ipairs(variables.speakKinds or {}) do
+				for _, v in ipairs(variables.cc_speakKinds or {}) do
 					canUnderstand = (cc.config.understandKinds or {})[v] or false
 					if canUnderstand then break end
 				end
 
 				if critterMessage and (newMessageNumber > lastMessageNumber) then
-					userLastMessageNumber[username] = critterMessageNum or (lastMessageNumber + 1)
-					messageTable.with[2] = _Message:new(critterMessage):critterParse(true,
-						canUnderstand)
-					return toJson(messageTable)
+					userLastMessageNumber[parsed.username] = critterMessageNum or (lastMessageNumber + 1)
+					return toJson(cc.recieveApplyMessage(messageJson, parsed, _Message:new(critterMessage):critterParse(true,canUnderstand)))
 				else
 					if cc.config.debug then
 						print(
 							"obfuscating critter message, adding message to parsing queue.")
 					end
-					messageTable.with[2] = { text = message, obfuscated = true, font = "alt" } -- temporarily obfuscate until we can parse it with the critter message data
 					table.insert(critterMessageQueue, {
-						username = username or "",
-						uuid = uuid or "",
-						message = message or "",
+						username = parsed.username or "",
+						uuid = parsed.uuid or "",
+						message = parsed.message or "",
 						canUnderstand = canUnderstand or false,
 						attempts = 0,
 					})
-					return toJson(messageTable)
+					return toJson(cc.recieveObfuscateMessage(messageJson, parsed))
 				end
 			end
 		end
 		if cc.checkCritterBrain(true) then
 			cc.temp.all.messages = math.max((cc.temp.all.messages - 1), 0)
 			cc.temp.brain.messages = math.max((cc.temp.brain.messages - 1), 0)
+			cc.temp.all.timeActive = true
+			cc.temp.all.timeActive = true
+			config:save("cc_temp_brain", cc.temp.brain)
+			config:save("cc_temp_all", cc.temp.all)
 
 			if cc.config.debug then
 				print(
 					"Non critter message found, obfuscating words beyond speech level.")
 			end
-			local length = #message
+			local length = #parsed.message
 			local newMessage = _Message:new()
 			local pos = 1
 			while pos <= length do
-				local wordStart, wordEnd = cc.findNextWord(message, pos)
+				local wordStart, wordEnd = cc.findNextWord(parsed.message, pos)
 				if wordStart then
 					if pos < wordStart then
-						local misc = message:sub(pos, wordStart - 1)
+						local misc = parsed.message:sub(pos, wordStart - 1)
 						newMessage:append(misc, misc) -- copy whatever was between the previous word and this one
 					end
 					pos = wordEnd + 1
-					local curWord = message:sub(wordStart, wordEnd)
+					local curWord = parsed.message:sub(wordStart, wordEnd)
 					newMessage:append(curWord)
 				else -- no more words found, copy the remaining characters to the new message
-					local curWord = message:sub(pos, -1)
+					local curWord = parsed.message:sub(pos, -1)
 					newMessage:append(curWord, true)
 
 					break -- exit the loop
 				end
 				if not pos then break end
 			end
-			if speakerBlock then
-				messageTable.text = speakerBlock
-				messageTable.extra = newMessage:critterParse()
-			else
-				messageTable.with[2] = newMessage:critterParse()
-			end
-			return toJson(messageTable)
+			return toJson(cc.recieveApplyMessage(messageJson, parsed, newMessage:critterParse()))
 		end
 	elseif cc.config.debug then
-		print("invalid message to parse: ", username, uuid, valid)
+		print("invalid message to parse")
+		printTable(messageJson)
 	end
 end
 
@@ -800,7 +845,9 @@ local dt = 1 / 20
 function events.tick()
 	if not host:isHost() then return end -- everything past this is for host only
 	for k, v in pairs(cc.temp) do
-		v.time = math.max(0, v.time - dt)
+		if v.timeActive then
+			v.time = math.max(0, v.time - dt)
+		end
 	end
 
 	if not didPostInit then
@@ -811,10 +858,10 @@ function events.tick()
 	if queued then
 		queued.attempts = queued.attempts + 1
 		local variables = world:avatarVars()[queued.uuid] or {}
-		local critterMessage = variables["msg:" .. queued.message]
-		local critterMessageNum = variables["msgNum:" .. queued.message]
+		local critterMessage = variables["cc_msg:" .. queued.message]
+		local critterMessageNum = variables["cc_msgNum:" .. queued.message]
 
-		local newMessageNumber = variables.messageNumber or 0
+		local newMessageNumber = variables.cc_messageNumber or 0
 		local lastMessageNumber = userLastMessageNumber[queued.username] or 0
 		if newMessageNumber < lastMessageNumber then
 			userLastMessageNumber[queued.username] = 0
@@ -828,30 +875,30 @@ function events.tick()
 		if critterMessage and (newMessageNumber > lastMessageNumber) then
 			for i = 1, 10 do
 				local curMessage = host:getChatMessage(i)
-				local curMessageJson
-				if curMessage then
-					curMessageJson = parseJson(curMessage.json)
+				if not curMessage then break end
+				local curMessageJson = parseJson(curMessage.json)
+				if not curMessageJson then break end
+				if cc.config.debug then
+					print("checking message history: ", i)
+					printTable(curMessageJson, 3)
 				end
-				if curMessageJson and (type(curMessageJson.extra) == "table") and (type(curMessageJson.extra[2]) == "table") then
-					if cc.config.debug then
-						print("checking message history: ", i)
-						printTable(curMessageJson, 3)
-					end
-					local curMessageText = cc.condenseText(curMessageJson.extra[4])
-					local curMessageUsername = curMessageJson.extra[2].insertion
-
-					if (curMessageText == queued.message) and (curMessageUsername == queued.username) then
-						userLastMessageNumber[queued.username] = critterMessageNum or
-								(lastMessageNumber + 1)
-
-						curMessageJson.extra[4] = _Message:new(critterMessage):critterParse(true,
-							queued.canUnderstand)
-						host:setChatMessage(i, toJson(curMessageJson))
-						table.remove(critterMessageQueue, 1)
-						if cc.config.debug then print("found message.") end
-						break
-					end
-				else
+				local success, parsed = pcall(cc.hostMessageJson, curMessageJson)
+				if success and parsed and (parsed.message == queued.message) and (parsed.username == queued.username) then
+					userLastMessageNumber[queued.username] = critterMessageNum or (lastMessageNumber + 1)
+					host:setChatMessage(
+						i,
+						toJson(
+							cc.hostApplyMessage(
+								curMessageJson,
+								_Message:new(critterMessage):critterParse(
+									true,
+									queued.canUnderstand
+								)
+							)
+						)
+					)
+					table.remove(critterMessageQueue, 1)
+					if cc.config.debug then print("found message.") end
 					break
 				end
 			end
