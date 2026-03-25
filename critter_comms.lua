@@ -564,7 +564,7 @@ function cc.processCommand(message, allow)
 		hide = true
 		local commandStart, commandEnd = cc.findNextWord(message, prefixEnd + 1)
 		if not commandStart and commandEnd then
-			print("[CC] Could not process command.")
+			print("[CC] Could not process command: No command arguments.")
 			return false
 		end
 		command = {
@@ -608,12 +608,20 @@ function cc.processCommand(message, allow)
 end
 
 function cc.commands.speak(enable)
-	cc.config.speak = enable
+	if type(enable) == "nil" then
+		cc.config.speak = not cc.config.speak
+	else
+		cc.config.speak = enable
+	end
 	config:save("critterSpeak", cc.config.speak)
 end
 
 function cc.commands.brain(enable)
-	cc.config.brain = enable
+	if type(enable) == "nil" then
+		cc.config.brain = not cc.config.brain
+	else
+		cc.config.brain = enable
+	end
 	config:save("critterBrain", cc.config.brain)
 end
 
@@ -745,7 +753,7 @@ function events.chat_receive_message(raw, text)
 	if raw:find("^%[lua%]") then return end
 	local messageJson = parseJson(text)
 	if cc.config.debug then
-		print("[CC] received message.")
+		print("[CC] Received message.")
 		printTable(messageJson, 3)
 	end
 
@@ -789,7 +797,7 @@ function events.chat_receive_message(raw, text)
 				else
 					if cc.config.debug then
 						print(
-							"[CC] obfuscating critter message, adding message to parsing queue.")
+							"[CC] Obfuscating critter message, adding message to parsing queue.")
 					end
 					table.insert(critterMessageQueue, {
 						username = parsed.username or "",
@@ -838,7 +846,7 @@ function events.chat_receive_message(raw, text)
 			return toJson(cc.recieveApplyMessage(messageJson, parsed, newMessage:critterParse()))
 		end
 	elseif cc.config.debug then
-		print("[CC] invalid message to parse.")
+		print("[CC] Invalid message to parse.")
 		printTable(messageJson)
 	end
 end
@@ -871,7 +879,7 @@ function events.tick()
 			lastMessageNumber = 0
 		end
 		if cc.config.debug then
-			print("[CC] finding queued message: ", queued.message, "\n attempt: ",
+			print("[CC] Finding queued message: ", queued.message, "\n attempt: ",
 				queued.attempts)
 		end
 
@@ -882,7 +890,7 @@ function events.tick()
 				local curMessageJson = parseJson(curMessage.json)
 				if not curMessageJson then break end
 				if cc.config.debug then
-					print("[CC] checking message history: ", i)
+					print("[CC] Checking message history: ", i)
 					printTable(curMessageJson, 3)
 				end
 				local success, parsed = pcall(cc.hostMessageJson, curMessageJson)
@@ -901,12 +909,12 @@ function events.tick()
 						)
 					)
 					table.remove(critterMessageQueue, 1)
-					if cc.config.debug then print("[CC] found message.") end
+					if cc.config.debug then print("[CC] Found message.") end
 					break
 				end
 			end
 		elseif queued.attempts > 20 then
-			if cc.config.debug then print("[CC] gave up on finding message after too many attempts.") end
+			if cc.config.debug then print("[CC] Gave up on finding message after too many attempts.") end
 			userLastMessageNumber[queued.username] = critterMessageNum or (lastMessageNumber + 1)
 			table.remove(critterMessageQueue, 1)
 		end

@@ -25,10 +25,52 @@ Open `critter_comms_config.lua` in your favorite text editor, preferably one tha
 
 Peruse the values in the config file for any you may want to change, such as what sounds words are scrambled into, what words are whitelisted to leave unchanged, etc. Every value in the config should have a comment explaining what it is, and what it does.
 
-Of certain importance is the command prefix, which is used for the chat commands to control the script, the default prefix is `"!cc"` which would result in commands being sent like `"!cc speak true"` which would enable critter speak on the recipient if the sender is on the whitelist. By default the user list mode is a whitelist, you will have to add your own username to this whitelist.
+Of certain importance is the command prefix, which is used for the chat commands to control the script, the default prefix is `"!cc"` which would result in commands being sent like `"!cc speak true"` which would enable critter speak on the recipient if the sender is on the whitelist.
+
+In the config you must edit the `userList` the default the user list mode is a whitelist, you will have to add your own username to this whitelist, or switch it to being a blacklist for commands to function.
+
+The commands are as follows:
+
+#### !cc speak <true|false>
+enables and disables critter speak, forcing one to speak only in critter noises.
+
+Not supplying a true/false argument will toggle the current value
+
+#### !cc brain <true|false>
+enables and disables critter brain, forcing one to only understand other critters
+
+Not supplying a true/false argument will toggle the current value
+
+#### !cc all <true|false>
+enables or disables both speak and brain at the same time
+
+Not supplying a true/false argument will toggle the current value for both
+
+#### !cc addTime <speak|brain|all> <number(minutes)>
+temporarily enables the critter mode for the specified amount of time, adds onto existing timers
+
+#### !cc setTime <speak|brain|all> <number(minutes)>
+temporarily enables the critter mode for the specified amount of time, setting the timer to a specific value
+
+#### !cc addMessages <speak|brain|all> <number>
+temporarily enables the critter mode for the specified amount of messages, adding onto the existing count
+
+#### !cc setMessages <speak|brain|all> <number>
+temporarily enables the critter mode for the specified amount of messages, adding onto the existing count
+
+#### !cc stealWords <word> ...
+"steals" words from one's speech, making them unable to use them and critter words taking their place
+
+#### !cc returnWords <word> ...
+returns words that have been stolen to ones speech
+
+#### !cc returnAllWords
+returns all words that have been stolen
+
+#### !cc stealPrevMessage
+steals all the words used in the previous message sent
 
 All existing commands are listed in the config, one can also define an alias to inputting a command with specific arguments in the `commandPhrases` config value.
-
 
 ### How it works
 This is not encryption, an encryption based system would be far too large and make messages way too long to be reasonable to see in chat.
