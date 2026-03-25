@@ -6,18 +6,18 @@
  \ \_____\  \ \_\ \_\  \ \_\    \ \_\    \ \_\  \ \_____\  \ \_\ \_\
   \/_____/   \/_/ /_/   \/_/     \/_/     \/_/   \/_____/   \/_/ /_/
 
-          ______     ______     __    __     __    __     ______
-         /\  ___\   /\  __ \   /\ "-./  \   /\ "-./  \   /\  ___\
-         \ \ \____  \ \ \/\ \  \ \ \-./\ \  \ \ \-./\ \  \ \___  \
-          \ \_____\  \ \_____\  \ \_\ \ \_\  \ \_\ \ \_\  \/\_____\
-           \/_____/   \/_____/   \/_/  \/_/   \/_/  \/_/   \/_____/ v1.3
+		  ______     ______     __    __     __    __     ______
+		 /\  ___\   /\  __ \   /\ "-./  \   /\ "-./  \   /\  ___\
+		 \ \ \____  \ \ \/\ \  \ \ \-./\ \  \ \ \-./\ \  \ \___  \
+		  \ \_____\  \ \_____\  \ \_\ \ \_\  \ \_\ \ \_\  \/\_____\
+		   \/_____/   \/_____/   \/_/  \/_/   \/_/  \/_/   \/_____/ v1.3
 
-                        fox to fox communication
+						fox to fox communication
 
-                        fox to fox conversation
+						fox to fox conversation
 
-                    Made by Wasabi_Raptor and Zygahedron
-                https://github.com/WasabiRaptor/critter-comms
+					Made by Wasabi_Raptor and Zygahedron
+				https://github.com/WasabiRaptor/critter-comms
 ]]
 
 -- print("reloaded")
@@ -86,7 +86,7 @@ else
 	config:save("cc_temp_speak", cc.temp.speak)
 	config:save("cc_temp_all", cc.temp.all)
 end
-if cc.config.debug then print("Critter Comms debug messages are enabled.") end
+if cc.config.debug then print("[CC] Critter Comms debug messages are enabled.") end
 
 ---@param randomRoll boolean
 ---@return boolean
@@ -470,11 +470,11 @@ function events.chat_send_message(message)
 		else
 			return message
 		end
-	elseif message == "!cc debug" then
+	elseif message == (cc.config.commandPrefix.." debug") then
 		cc.config.debug = not cc.config.debug
 		config:save("debug", cc.config.debug)
-		print(cc.config.debug and "Critter Comms debug messages enabled." or
-			"Critter Comms debug messages disabled.")
+		print(cc.config.debug and "[CC] Critter Comms debug messages enabled." or
+			"[CC] Critter Comms debug messages disabled.")
 		return
 	end
 
@@ -533,7 +533,7 @@ function events.chat_send_message(message)
 		end
 		if not pos then break end
 	end
-	if cc.config.debug then print("original message: ", message) end
+	if cc.config.debug then print("[CC] original message: ", message) end
 	host:appendChatHistory(message)
 	newMessage:ping()
 	cc.prev.message = newMessage
@@ -563,6 +563,10 @@ function cc.processCommand(message, allow)
 	if prefixStart and prefixEnd then
 		hide = true
 		local commandStart, commandEnd = cc.findNextWord(message, prefixEnd + 1)
+		if not commandStart and commandEnd then
+			print("[CC] Could not process command.")
+			return false
+		end
 		command = {
 			name = message:sub(commandStart, commandEnd),
 			args = {},
@@ -604,7 +608,6 @@ function cc.processCommand(message, allow)
 end
 
 function cc.commands.speak(enable)
-	print(enable)
 	cc.config.speak = enable
 	config:save("critterSpeak", cc.config.speak)
 end
@@ -742,7 +745,7 @@ function events.chat_receive_message(raw, text)
 	if raw:find("^%[lua%]") then return end
 	local messageJson = parseJson(text)
 	if cc.config.debug then
-		print("received message.")
+		print("[CC] received message.")
 		printTable(messageJson, 3)
 	end
 
@@ -786,7 +789,7 @@ function events.chat_receive_message(raw, text)
 				else
 					if cc.config.debug then
 						print(
-							"obfuscating critter message, adding message to parsing queue.")
+							"[CC] obfuscating critter message, adding message to parsing queue.")
 					end
 					table.insert(critterMessageQueue, {
 						username = parsed.username or "",
@@ -835,7 +838,7 @@ function events.chat_receive_message(raw, text)
 			return toJson(cc.recieveApplyMessage(messageJson, parsed, newMessage:critterParse()))
 		end
 	elseif cc.config.debug then
-		print("invalid message to parse")
+		print("[CC] invalid message to parse.")
 		printTable(messageJson)
 	end
 end
@@ -868,7 +871,7 @@ function events.tick()
 			lastMessageNumber = 0
 		end
 		if cc.config.debug then
-			print("finding queued message: ", queued.message, "\n attempt: ",
+			print("[CC] finding queued message: ", queued.message, "\n attempt: ",
 				queued.attempts)
 		end
 
@@ -879,7 +882,7 @@ function events.tick()
 				local curMessageJson = parseJson(curMessage.json)
 				if not curMessageJson then break end
 				if cc.config.debug then
-					print("checking message history: ", i)
+					print("[CC] checking message history: ", i)
 					printTable(curMessageJson, 3)
 				end
 				local success, parsed = pcall(cc.hostMessageJson, curMessageJson)
@@ -898,12 +901,12 @@ function events.tick()
 						)
 					)
 					table.remove(critterMessageQueue, 1)
-					if cc.config.debug then print("found message.") end
+					if cc.config.debug then print("[CC] found message.") end
 					break
 				end
 			end
 		elseif queued.attempts > 20 then
-			if cc.config.debug then print("gave up on finding message after too many attempts.") end
+			if cc.config.debug then print("[CC] gave up on finding message after too many attempts.") end
 			userLastMessageNumber[queued.username] = critterMessageNum or (lastMessageNumber + 1)
 			table.remove(critterMessageQueue, 1)
 		end
