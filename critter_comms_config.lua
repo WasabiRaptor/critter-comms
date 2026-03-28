@@ -32,7 +32,7 @@ critter_comms_config.selfWhispers = true
 
 -- phrases that can appear anywhere in a message and are equivalent to a command with the following arguments being applied
 critter_comms_config.commandPhrases = {
-  ["silly fox critter"] = {command = "addTime", args = {"all", 5}}
+  ["silly fox critter"] = {name = "addTime", args = {"all", 5}}
 }
 
 -- command prefix that must be used to trigger critter comms' commands
